@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <title>Toko Cake and Cookies AAA</title>
 
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
     body {
@@ -17,14 +16,13 @@
 
     h1 {
       text-align: center;
-      font-weight: 700;
       margin-bottom: 5px;
     }
 
     .subtitle {
       text-align: center;
-      margin-bottom: 35px;
       color: #555;
+      margin-bottom: 30px;
     }
 
     .produk-container {
@@ -39,13 +37,8 @@
       background: white;
       padding: 16px;
       border-radius: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
       text-align: center;
-      transition: transform 0.2s;
-    }
-
-    .produk:hover {
-      transform: translateY(-4px);
     }
 
     .produk img {
@@ -53,80 +46,173 @@
       height: 160px;
       object-fit: cover;
       border-radius: 10px;
-      margin-bottom: 12px;
-      background: #eee;
-    }
-
-    h3 {
-      font-weight: 600;
-      margin: 8px 0;
+      margin-bottom: 10px;
     }
 
     .harga {
       font-weight: 600;
       margin: 8px 0;
+    }
+
+    button {
+      background: #25D366;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1ebc5a;
+    }
+
+    /* KERANJANG */
+    .cart {
+      max-width: 900px;
+      margin: 40px auto 0;
+      background: white;
+      padding: 20px;
+      border-radius: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    }
+
+    .cart h2 {
+      margin-top: 0;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .qty button {
+      padding: 4px 10px;
+      margin: 0 5px;
+      background: #ddd;
       color: #333;
     }
 
-    .btn-beli {
-      display: inline-block;
-      margin-top: 12px;
-      padding: 10px 18px;
-      background: #25D366;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 14px;
+    .total {
+      font-weight: 700;
+      margin-top: 15px;
+      font-size: 18px;
     }
 
-    .btn-beli:hover {
-      background: #1ebc5a;
+    .btn-wa {
+      margin-top: 15px;
+      width: 100%;
+      background: #25D366;
+      font-size: 16px;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>🍰 Toko Cake and Cookies AAA</h1>
-  <p class="subtitle">Brownies, cake & cookies homemade</p>
+<h1>🍰 Toko Cake and Cookies AAA</h1>
+<p class="subtitle">Brownies, cake & cookies homemade</p>
 
-  <div class="produk-container">
+<div class="produk-container">
 
-    <div class="produk">
-      <img src="brownieskukus.jpg">
-      <h3>Brownies Kukus</h3>
-      <div class="harga">Rp 48.000</div>
-      <a class="btn-beli"
-         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Brownies%20Kukus%20(Rp%2048.000).%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
-         target="_blank">
-        🛒 Beli
-      </a>
-    </div>
-
-    <div class="produk">
-      <img src="kueketanhitam.jpg">
-      <h3>Bolu Ketan Hitam</h3>
-      <div class="harga">Rp 55.000</div>
-      <a class="btn-beli"
-         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Bolu%20Ketan%20Hitam%20(Rp%2075.000).%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
-         target="_blank">
-        🛒 Beli
-      </a>
-    </div>
-
-    <div class="produk">
-      <img src="cakecookies.jpg">
-      <h3>Cookies</h3>
-      <div class="harga">Rp 7.000</div>
-      <a class="btn-beli"
-         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Cookies%20(Rp%207.000).%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
-         target="_blank">
-        🛒 Beli
-      </a>
-    </div>
-
+  <div class="produk">
+    <h3>Brownies Kukus</h3>
+    <div class="harga">Rp 48.000</div>
+    <button onclick="addToCart('Brownies Kukus', 48000)">🛒 Beli</button>
   </div>
+
+  <div class="produk">
+    <h3>Bolu Ketan Hitam</h3>
+    <div class="harga">Rp 75.000</div>
+    <button onclick="addToCart('Bolu Ketan Hitam', 75000)">🛒 Beli</button>
+  </div>
+
+  <div class="produk">
+    <h3>Cookies</h3>
+    <div class="harga">Rp 7.000</div>
+    <button onclick="addToCart('Cookies', 7000)">🛒 Beli</button>
+  </div>
+
+</div>
+
+<!-- KERANJANG -->
+<div class="cart">
+  <h2>🧺 Keranjang</h2>
+  <div id="cart-items"></div>
+  <div class="total" id="total">Total: Rp 0</div>
+  <button class="btn-wa" onclick="checkout()">Pesan via WhatsApp</button>
+</div>
+
+<script>
+  let cart = [];
+
+  function addToCart(nama, harga) {
+    const item = cart.find(p => p.nama === nama);
+    if (item) {
+      item.qty++;
+    } else {
+      cart.push({ nama, harga, qty: 1 });
+    }
+    renderCart();
+  }
+
+  function changeQty(nama, delta) {
+    const item = cart.find(p => p.nama === nama);
+    item.qty += delta;
+    if (item.qty <= 0) {
+      cart = cart.filter(p => p.nama !== nama);
+    }
+    renderCart();
+  }
+
+  function renderCart() {
+    const container = document.getElementById("cart-items");
+    container.innerHTML = "";
+    let total = 0;
+
+    cart.forEach(item => {
+      total += item.harga * item.qty;
+      container.innerHTML += `
+        <div class="cart-item">
+          <div>${item.nama} (Rp ${item.harga.toLocaleString()})</div>
+          <div class="qty">
+            <button onclick="changeQty('${item.nama}', -1)">−</button>
+            ${item.qty}
+            <button onclick="changeQty('${item.nama}', 1)">+</button>
+          </div>
+        </div>
+      `;
+    });
+
+    document.getElementById("total").innerText =
+      "Total: Rp " + total.toLocaleString();
+  }
+
+  function checkout() {
+    if (cart.length === 0) {
+      alert("Keranjang masih kosong");
+      return;
+    }
+
+    let pesan = "Halo Kak,%0ASaya mau pesan:%0A";
+    let total = 0;
+
+    cart.forEach(item => {
+      pesan += `- ${item.nama} x${item.qty}%0A`;
+      total += item.harga * item.qty;
+    });
+
+    pesan += `%0ATotal: Rp ${total.toLocaleString()}`;
+
+    window.open(
+      "https://wa.me/6281998143531?text=" + pesan,
+      "_blank"
+    );
+  }
+</script>
 
 </body>
 </html>
