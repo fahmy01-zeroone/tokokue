@@ -14,16 +14,15 @@
       margin: 0;
     }
 
-   h1 {
+    h1 {
       text-align: center;
-      font-weight: 700;
       margin-bottom: 5px;
     }
 
     .subtitle {
       text-align: center;
       color: #555;
-      margin-bottom: 35px;
+      margin-bottom: 30px;
     }
 
     .produk-container {
@@ -38,13 +37,8 @@
       background: white;
       padding: 16px;
       border-radius: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
       text-align: center;
-      transition: transform 0.2s;
-    }
-    
-   .produk:hover {
-      transform: translateY(-4px);
     }
 
     .produk img {
@@ -52,14 +46,9 @@
       height: 160px;
       object-fit: cover;
       border-radius: 10px;
-      margin-bottom: 12px;
-      background: #eee;
+      margin-bottom: 10px;
     }
 
-    h3 {
-      font-weight: 600;
-      margin: 8px 0;
-    
     .harga {
       font-weight: 600;
       margin: 8px 0;
@@ -70,7 +59,7 @@
       color: white;
       border: none;
       padding: 10px 16px;
-      border-radius: 5px;
+      border-radius: 8px;
       font-weight: 600;
       cursor: pointer;
     }
@@ -93,14 +82,30 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .qty button {
       padding: 4px 10px;
-      margin: 0 5px;
       background: #ddd;
       color: #333;
+      border-radius: 6px;
+    }
+
+    .qty input {
+      width: 60px;
+      padding: 6px;
+      text-align: center;
+      font-size: 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
 
     .total {
@@ -156,7 +161,6 @@
 </div>
 
 <script>
-  // LOAD CART DARI LOCALSTORAGE
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
   renderCart();
 
@@ -185,6 +189,18 @@
     renderCart();
   }
 
+  function updateQty(nama, value) {
+    const qty = parseInt(value);
+    if (isNaN(qty) || qty <= 0) {
+      cart = cart.filter(p => p.nama !== nama);
+    } else {
+      const item = cart.find(p => p.nama === nama);
+      item.qty = qty;
+    }
+    saveCart();
+    renderCart();
+  }
+
   function renderCart() {
     const container = document.getElementById("cart-items");
     container.innerHTML = "";
@@ -194,10 +210,12 @@
       total += item.harga * item.qty;
       container.innerHTML += `
         <div class="cart-item">
-          <div>${item.nama} (Rp ${item.harga.toLocaleString()})</div>
+          <div>${item.nama}<br>Rp ${item.harga.toLocaleString()}</div>
           <div class="qty">
             <button onclick="changeQty('${item.nama}', -1)">−</button>
-            ${item.qty}
+            <input type="number" min="1"
+              value="${item.qty}"
+              onchange="updateQty('${item.nama}', this.value)">
             <button onclick="changeQty('${item.nama}', 1)">+</button>
           </div>
         </div>
@@ -224,7 +242,6 @@
 
     pesan += `%0ATotal: Rp ${total.toLocaleString()}`;
 
-    // OPTIONAL: bersihkan cart setelah checkout
     localStorage.removeItem("cart");
 
     window.open(
