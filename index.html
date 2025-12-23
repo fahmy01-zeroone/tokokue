@@ -4,20 +4,27 @@
   <meta charset="UTF-8">
   <title>Toko Cake and Cookies AAA</title>
 
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Poppins', sans-serif;
       background: #f6f6f6;
       padding: 25px;
+      margin: 0;
     }
 
     h1 {
       text-align: center;
+      font-weight: 700;
+      margin-bottom: 5px;
     }
 
     .subtitle {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 35px;
+      color: #555;
     }
 
     .produk-container {
@@ -30,34 +37,47 @@
 
     .produk {
       background: white;
-      padding: 15px;
-      border-radius: 10px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 16px;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
       text-align: center;
+      transition: transform 0.2s;
+    }
+
+    .produk:hover {
+      transform: translateY(-4px);
     }
 
     .produk img {
       width: 100%;
       height: 160px;
       object-fit: cover;
-      border-radius: 8px;
-      margin-bottom: 10px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      background: #eee;
+    }
+
+    h3 {
+      font-weight: 600;
+      margin: 8px 0;
     }
 
     .harga {
-      font-weight: bold;
-      margin: 10px 0;
+      font-weight: 600;
+      margin: 8px 0;
+      color: #333;
     }
 
     .btn-beli {
       display: inline-block;
-      margin-top: 10px;
-      padding: 10px 16px;
+      margin-top: 12px;
+      padding: 10px 18px;
       background: #25D366;
       color: white;
       text-decoration: none;
-      border-radius: 6px;
-      font-weight: bold;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
     }
 
     .btn-beli:hover {
@@ -74,33 +94,33 @@
   <div class="produk-container">
 
     <div class="produk">
-      <img src="brownies kukus.jpg">
+      <img src="brownieskukus.jpg">
       <h3>Brownies Kukus</h3>
       <div class="harga">Rp 48.000</div>
       <a class="btn-beli"
-         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Brownies%20Kukus%20harga%2048rb.%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
+         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Brownies%20Kukus%20(Rp%2048.000).%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
          target="_blank">
         🛒 Beli
       </a>
     </div>
 
     <div class="produk">
-      <img src="kue ketan hitam.jpeg">
+      <img src="boluketanhitam.jpg">
       <h3>Bolu Ketan Hitam</h3>
       <div class="harga">Rp 75.000</div>
       <a class="btn-beli"
-         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Cake%20Coklat%20harga%2075rb.%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
+         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Bolu%20Ketan%20Hitam%20(Rp%2075.000).%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
          target="_blank">
         🛒 Beli
       </a>
     </div>
 
     <div class="produk">
-      <img src="cake cookies.jpeg">
+      <img src="cakecookies.jpg">
       <h3>Cookies</h3>
       <div class="harga">Rp 7.000</div>
       <a class="btn-beli"
-         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Cookies%20harga%2035rb.%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
+         href="https://wa.me/6281998143531?text=Halo%20Kak%2C%0ASaya%20mau%20pesan%20Cookies%20(Rp%207.000).%0AJumlah%20%3A%0ATanggal%20ambil%20%3A"
          target="_blank">
         🛒 Beli
       </a>
