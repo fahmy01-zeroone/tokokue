@@ -7,74 +7,103 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body { font-family: 'Poppins', sans-serif; background: #f6f6f6; padding: 25px; margin: 0; }
-    h1 { text-align: center; margin-bottom: 5px; font-size: 22px; }
-    .subtitle { text-align: center; color: #555; margin-bottom: 30px; font-size: 14px; }
+    /* RESET UMUM */
+    body { font-family: 'Poppins', sans-serif; background: #f6f6f6; padding: 20px; margin: 0; }
     
+    h1 { text-align: center; margin-bottom: 5px; font-size: 26px; } /* Huruf Judul diperbesar sedikit */
+    .subtitle { text-align: center; color: #555; margin-bottom: 30px; font-size: 15px; }
+    
+    /* --- PERBAIKAN TAMPILAN (LEBAR) DI SINI --- */
     .produk-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 15px;
-      max-width: 900px;
+      /* Grid responsif: Di HP 2 kolom (jika muat) atau 1, Di PC banyak kolom */
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
+      gap: 20px;
+      /* DULU 900px, SEKARANG 1200px BIAR LEGA DI PC */
+      max-width: 1200px; 
       margin: auto;
     }
 
     .produk {
-      background: white; padding: 12px; border-radius: 14px;
+      background: white; padding: 15px; border-radius: 14px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center;
       transition: transform 0.3s ease; position: relative;
+      display: flex; flex-direction: column; justify-content: space-between;
     }
     
+    /* Efek hover khusus PC biar interaktif */
+    .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
     .produk img {
-      width: 100%; height: 140px; object-fit: cover;
+      width: 100%; height: 160px; object-fit: cover;
       border-radius: 10px; margin-bottom: 10px;
     }
 
     .stok-badge {
       position: absolute; top: 10px; right: 10px;
-      background: rgba(0,0,0,0.6); color: white;
-      padding: 4px 8px; border-radius: 6px; font-size: 11px;
+      background: rgba(0,0,0,0.7); color: white;
+      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold;
     }
 
-    .harga { font-weight: 600; margin: 8px 0; color: #d35400; font-size: 15px; }
+    .produk h3 { margin: 10px 0 5px; font-size: 18px; line-height: 1.2; }
+    .harga { font-weight: 700; margin: 5px 0 15px; color: #d35400; font-size: 16px; }
     
     button {
       background: #25D366; color: white; border: none;
-      padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+      padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+      transition: background 0.2s;
     }
+    button:hover { background: #1da851; }
     button:disabled { background: #ccc; cursor: not-allowed; }
 
+    /* --- KERANJANG --- */
     .cart {
-      max-width: 900px; margin: 40px auto 20px; background: white;
-      padding: 20px; border-radius: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      /* DULU 900px, SEKARANG 1200px JUGA */
+      max-width: 1200px; 
+      margin: 40px auto 20px; background: white;
+      padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     }
     
     .cart-header {
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+      display: flex; justify-content: space-between; align-items: center; 
+      margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;
     }
     
-    /* FIX TOMBOL HAPUS */
     .btn-clear {
-      background: #e74c3c; font-size: 12px; padding: 5px 10px;
+      background: #ff4757; color: white; font-size: 13px; padding: 6px 12px; border-radius: 6px;
     }
+    .btn-clear:hover { background: #ff6b81; }
 
     .cart-item {
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 10px;
+      margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px;
     }
     
-    /* FIX TOMBOL PLUS MINUS BIAR GAMPANGDIPENCET DI HP */
-    .qty { display: flex; align-items: center; gap: 8px; }
-    .qty button { 
-      padding: 5px 12px; font-size: 18px; line-height: 1; 
-      background: #ddd; color: #333; 
-    }
-    .qty input { width: 35px; text-align: center; border: 1px solid #ddd; padding: 5px; }
+    /* Tampilan Item di Keranjang */
+    .item-info strong { font-size: 16px; color: #333; }
+    .item-info small { color: #888; font-size: 13px; }
 
-    .total { font-weight: 700; margin-top: 15px; font-size: 18px; text-align: right;}
-    .btn-checkout { margin-top: 15px; width: 100%; background: #0d6efd; font-size: 16px; padding: 12px; }
+    /* TOMBOL PLUS MINUS YANG NYAMAN (HP & PC) */
+    .qty { display: flex; align-items: center; gap: 5px; }
+    .qty button { 
+      padding: 0; width: 32px; height: 32px; font-size: 18px; 
+      background: #f1f2f6; color: #333; display: flex; 
+      align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .qty button:active { background: #dfe4ea; }
+    .qty input { 
+      width: 40px; text-align: center; border: 1px solid #ddd; 
+      border-radius: 4px; padding: 5px; font-weight: bold;
+    }
+
+    .total { font-weight: 700; margin-top: 20px; font-size: 20px; text-align: right; color: #2d3436; }
+    .btn-checkout { 
+      margin-top: 20px; width: 100%; background: #0984e3; 
+      font-size: 18px; padding: 14px; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2);
+    }
+    .btn-checkout:hover { background: #0076d1; }
     
-    .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; }
+    .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; margin: 40px 0; }
   </style>
 </head>
 
@@ -89,7 +118,7 @@
 
 <div class="cart">
   <div class="cart-header">
-    <h2 style="margin:0">🧺 Keranjang</h2>
+    <h2 style="margin:0">🧺 Keranjang Belanja</h2>
     <button class="btn-clear" onclick="hapusKeranjang()">🗑️ Hapus Semua</button>
   </div>
   
@@ -97,7 +126,7 @@
   <div class="total" id="total">Total: Rp 0</div>
   
   <button class="btn-checkout" id="btn-bayar" onclick="mulaiPembayaranMidtrans()">Bayar Sekarang</button>
-  <p style="text-align: center; font-size: 12px; color: #888; margin-top: 10px;">
+  <p style="text-align: center; font-size: 13px; color: #888; margin-top: 15px;">
     *Jika batal bayar, mohon klik tanda silang (X) di pojok kanan atas popup.
   </p>
 </div>
@@ -163,7 +192,7 @@
     });
   }
 
-  // --- FUNGSI KERANJANG (FIX MOBILE) ---
+  // --- FUNGSI KERANJANG (Safe Logic) ---
   function addToCart(id, nama, harga, maxStock) {
     const item = cart.find(p => p.id === id);
     if (item) {
@@ -180,23 +209,14 @@
     if (!item) return;
     
     const newQty = item.qty + delta;
-    
-    // Cek Stok Maksimum (Ambil dr cart storage)
-    if (delta > 0 && newQty > item.maxStock) {
-        return alert("Stok mentok!");
-    }
+    if (delta > 0 && newQty > item.maxStock) return alert("Stok mentok!");
 
     item.qty = newQty;
-    
-    // Jika 0 atau kurang, hapus item
-    if (item.qty <= 0) {
-        cart = cart.filter(p => p.id !== id);
-    }
+    if (item.qty <= 0) cart = cart.filter(p => p.id !== id);
     
     saveCart(); renderCart();
   }
 
-  // --- TOMBOL DARURAT HAPUS KERANJANG ---
   function hapusKeranjang() {
     if(confirm("Yakin ingin mengosongkan keranjang?")) {
         cart = [];
@@ -210,7 +230,7 @@
     el.innerHTML = "";
     
     if (cart.length === 0) {
-        el.innerHTML = "<p style='text-align:center; color:#999'>Keranjang kosong</p>";
+        el.innerHTML = "<p style='text-align:center; color:#999; padding:20px;'>Keranjang belanja Anda kosong.</p>";
         document.getElementById("total").innerText = "Total: Rp 0";
         return;
     }
@@ -220,7 +240,10 @@
       total += i.harga * i.qty;
       el.innerHTML += `
         <div class="cart-item">
-          <div><strong>${i.nama}</strong><br><small>Rp ${i.harga.toLocaleString()}</small></div>
+          <div class="item-info">
+            <strong>${i.nama}</strong><br>
+            <small>@ Rp ${i.harga.toLocaleString()}</small>
+          </div>
           <div class="qty">
             <button onclick="changeQty('${i.id}', -1)">−</button>
             <input type="text" value="${i.qty}" readonly>
@@ -233,9 +256,7 @@
 
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
-  // ==========================================================
-  // LOGIKA PEMBAYARAN MIDTRANS (FIX MOBILE)
-  // ==========================================================
+  // --- MIDTRANS LOGIC ---
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
 
@@ -243,7 +264,7 @@
     cart.forEach(item => totalBayar += item.harga * item.qty);
 
     const btn = document.getElementById("btn-bayar");
-    btn.innerHTML = "⏳ Proses...";
+    btn.innerHTML = "⏳ Memproses...";
     btn.disabled = true;
 
     const resetButton = () => {
@@ -261,14 +282,13 @@
         const data = await response.json();
         
         if (!data.token) {
-            alert("Gagal dapat token. Cek Server Key.");
-            resetButton();
-            return;
+            alert("Gagal koneksi Token.");
+            resetButton(); return;
         }
 
         window.snap.pay(data.token, {
             onSuccess: function(result){
-                alert("Pembayaran Berhasil! Stok akan dikurangi.");
+                alert("Pembayaran Berhasil! Stok berkurang.");
                 kurangiStokDiDatabase(); 
                 resetButton();
             },
@@ -281,11 +301,10 @@
                 resetButton();
             },
             onClose: function(){
-                console.log('Popup ditutup');
+                console.log('Popup closed');
                 resetButton(); 
             }
         });
-
     } catch (error) {
         console.error("Error:", error);
         alert("Gagal koneksi server.");
@@ -293,42 +312,28 @@
     }
   }
 
-  // --- FUNGSI UPDATE STOK ---
   async function kurangiStokDiDatabase() {
     const userToken = "user_" + Math.floor(Math.random() * 10000);
-    let suksesCount = 0;
-
     for (const item of cart) {
       try {
-        const payload = {
-          product_id: item.id,
-          user_token: userToken,
-          quantity: item.qty
-        };
-
-        const res = await fetch(`${API_BASE_URL}/bayar`, {
+        await fetch(`${API_BASE_URL}/bayar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            product_id: item.id,
+            user_token: userToken,
+            quantity: item.qty
+          })
         });
-
-        const hasil = await res.json();
-        if (res.ok && hasil.success) suksesCount++;
-
-      } catch (err) { console.error("Error update stok:", err); }
+      } catch (err) { console.error("Error stok:", err); }
     }
-
-    // Reset Keranjang
     cart = []; 
-    localStorage.removeItem("cart"); // Hapus dari memori HP juga
+    localStorage.removeItem("cart");
     renderCart();
     fetchProducts(); 
-    
     document.getElementById("btn-bayar").innerHTML = "Bayar Sekarang";
     document.getElementById("btn-bayar").disabled = false;
-    alert("Transaksi Selesai!");
   }
-
 </script>
 
 </body>
