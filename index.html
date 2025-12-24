@@ -3,79 +3,96 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
   <title>Toko Cake and Cookies AAA</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
     body { font-family: 'Poppins', sans-serif; background: #f6f6f6; padding: 25px; margin: 0; }
-    h1 { text-align: center; margin-bottom: 5px; }
-    .subtitle { text-align: center; color: #555; margin-bottom: 30px; }
+    h1 { text-align: center; margin-bottom: 5px; font-size: 22px; }
+    .subtitle { text-align: center; color: #555; margin-bottom: 30px; font-size: 14px; }
     
     .produk-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 15px;
       max-width: 900px;
       margin: auto;
     }
 
     .produk {
-      background: white; padding: 16px; border-radius: 14px;
+      background: white; padding: 12px; border-radius: 14px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center;
       transition: transform 0.3s ease; position: relative;
     }
-    .produk:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(0,0,0,0.18); }
     
     .produk img {
-      width: 100%; height: 160px; object-fit: cover;
+      width: 100%; height: 140px; object-fit: cover;
       border-radius: 10px; margin-bottom: 10px;
     }
 
     .stok-badge {
       position: absolute; top: 10px; right: 10px;
       background: rgba(0,0,0,0.6); color: white;
-      padding: 4px 8px; border-radius: 6px; font-size: 12px;
+      padding: 4px 8px; border-radius: 6px; font-size: 11px;
     }
 
-    .harga { font-weight: 600; margin: 8px 0; color: #d35400; }
+    .harga { font-weight: 600; margin: 8px 0; color: #d35400; font-size: 15px; }
     
     button {
       background: #25D366; color: white; border: none;
-      padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
     }
     button:disabled { background: #ccc; cursor: not-allowed; }
 
     .cart {
-      max-width: 900px; margin: 40px auto 0; background: white;
+      max-width: 900px; margin: 40px auto 20px; background: white;
       padding: 20px; border-radius: 14px; box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
+    
+    .cart-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;
+    }
+    
+    /* FIX TOMBOL HAPUS */
+    .btn-clear {
+      background: #e74c3c; font-size: 12px; padding: 5px 10px;
+    }
+
     .cart-item {
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 10px;
     }
-    .qty { display: flex; align-items: center; gap: 6px; }
-    .qty input { width: 40px; text-align: center; }
+    
+    /* FIX TOMBOL PLUS MINUS BIAR GAMPANGDIPENCET DI HP */
+    .qty { display: flex; align-items: center; gap: 8px; }
+    .qty button { 
+      padding: 5px 12px; font-size: 18px; line-height: 1; 
+      background: #ddd; color: #333; 
+    }
+    .qty input { width: 35px; text-align: center; border: 1px solid #ddd; padding: 5px; }
 
     .total { font-weight: 700; margin-top: 15px; font-size: 18px; text-align: right;}
-    .btn-checkout { margin-top: 15px; width: 100%; background: #0d6efd; font-size: 16px; }
+    .btn-checkout { margin-top: 15px; width: 100%; background: #0d6efd; font-size: 16px; padding: 12px; }
     
     .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; }
-
   </style>
 </head>
 
 <body>
 
-<h1>🍰 Toko Cake and Cookies AAA</h1>
+<h1>🍰 Toko Cake AAA</h1>
 <p class="subtitle">Brownies, cake & cookies homemade (Live Stock)</p>
 
 <div class="produk-container" id="produk-list">
-  <div class="loading-msg">⏳ Sedang mengambil kue dari oven... (Loading)</div>
+  <div class="loading-msg">⏳ Sedang mengambil kue dari oven...</div>
 </div>
 
 <div class="cart">
-  <h2>🧺 Keranjang Belanja</h2>
+  <div class="cart-header">
+    <h2 style="margin:0">🧺 Keranjang</h2>
+    <button class="btn-clear" onclick="hapusKeranjang()">🗑️ Hapus Semua</button>
+  </div>
+  
   <div id="cart-items"></div>
   <div class="total" id="total">Total: Rp 0</div>
   
@@ -91,10 +108,8 @@
 </script>
 
 <script>
-  // 1. URL SERVER CLOUDFLARE KAMU
   const API_BASE_URL = "https://vending-machine-server.fahmyainun.workers.dev"; 
 
-  // 2. Mapping Gambar
   const productImages = {
     "p1": "brownieskukus.jpg",
     "p2": "boluketanhitam.jpg",
@@ -105,20 +120,18 @@
     "p7": "bolugulungkacangkejucoklat.jpg",
     "p8": "nastar.jpg",
     "p9": "bolugulung.jpg",
-    
     "default": "https://via.placeholder.com/300?text=Kue+Enak"
   };
 
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
   let productsData = []; 
 
-  // --- INIT ---
   document.addEventListener("DOMContentLoaded", () => {
     fetchProducts();
     renderCart();
   });
 
-  // --- FUNGSI DATA ---
+  // --- FUNGSI AMBIL DATA ---
   async function fetchProducts() {
     try {
       const res = await fetch(`${API_BASE_URL}/products`);
@@ -126,7 +139,7 @@
       productsData = await res.json();
       renderProducts(productsData);
     } catch (err) {
-      document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat produk.</p>`;
+      document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat produk. Cek koneksi.</p>`;
     }
   }
 
@@ -150,12 +163,12 @@
     });
   }
 
-  // --- FUNGSI KERANJANG ---
+  // --- FUNGSI KERANJANG (FIX MOBILE) ---
   function addToCart(id, nama, harga, maxStock) {
     const item = cart.find(p => p.id === id);
     if (item) {
       if (item.qty < maxStock) item.qty++;
-      else return alert("Stok tidak cukup!");
+      else return alert("Stok maksimal tercapai!");
     } else {
       cart.push({ id, nama, harga, qty: 1, maxStock });
     }
@@ -165,16 +178,43 @@
   function changeQty(id, delta) {
     const item = cart.find(p => p.id === id);
     if (!item) return;
+    
     const newQty = item.qty + delta;
-    if (newQty > item.maxStock) return alert("Stok mentok!");
+    
+    // Cek Stok Maksimum (Ambil dr cart storage)
+    if (delta > 0 && newQty > item.maxStock) {
+        return alert("Stok mentok!");
+    }
+
     item.qty = newQty;
-    if (item.qty <= 0) cart = cart.filter(p => p.id !== id);
+    
+    // Jika 0 atau kurang, hapus item
+    if (item.qty <= 0) {
+        cart = cart.filter(p => p.id !== id);
+    }
+    
     saveCart(); renderCart();
+  }
+
+  // --- TOMBOL DARURAT HAPUS KERANJANG ---
+  function hapusKeranjang() {
+    if(confirm("Yakin ingin mengosongkan keranjang?")) {
+        cart = [];
+        localStorage.removeItem("cart");
+        renderCart();
+    }
   }
 
   function renderCart() {
     const el = document.getElementById("cart-items");
     el.innerHTML = "";
+    
+    if (cart.length === 0) {
+        el.innerHTML = "<p style='text-align:center; color:#999'>Keranjang kosong</p>";
+        document.getElementById("total").innerText = "Total: Rp 0";
+        return;
+    }
+
     let total = 0;
     cart.forEach(i => {
       total += i.harga * i.qty;
@@ -194,22 +234,18 @@
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
   // ==========================================================
-  // LOGIKA PEMBAYARAN MIDTRANS (FIX TOMBOL RESET)
+  // LOGIKA PEMBAYARAN MIDTRANS (FIX MOBILE)
   // ==========================================================
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
 
-    // Hitung Total Belanja
     let totalBayar = 0;
-    cart.forEach(item => {
-       totalBayar += item.harga * item.qty;
-    });
+    cart.forEach(item => totalBayar += item.harga * item.qty);
 
     const btn = document.getElementById("btn-bayar");
     btn.innerHTML = "⏳ Proses...";
     btn.disabled = true;
 
-    // --- FUNGSI RESET TOMBOL (Fix Mobile & Close) ---
     const resetButton = () => {
         btn.innerHTML = "Bayar Sekarang";
         btn.disabled = false;
@@ -219,49 +255,45 @@
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                gross_amount: totalBayar,
-            }) 
+            body: JSON.stringify({ gross_amount: totalBayar }) 
         });
 
         const data = await response.json();
         
         if (!data.token) {
-            alert("Gagal koneksi atau Server Key salah.");
-            resetButton(); // Reset tombol jika gagal token
+            alert("Gagal dapat token. Cek Server Key.");
+            resetButton();
             return;
         }
 
-        // Munculkan Pop-up Snap Midtrans
         window.snap.pay(data.token, {
             onSuccess: function(result){
-                alert("Pembayaran Berhasil! Memproses stok...");
-                kurangiStokDiDatabase();
-                resetButton(); // Reset tombol
+                alert("Pembayaran Berhasil! Stok akan dikurangi.");
+                kurangiStokDiDatabase(); 
+                resetButton();
             },
             onPending: function(result){
-                alert("Menunggu pembayaran Anda!");
-                resetButton(); // Reset tombol supaya user bisa klik lagi/edit
+                alert("Menunggu pembayaran...");
+                resetButton();
             },
             onError: function(result){
                 alert("Pembayaran Gagal!");
-                resetButton(); // Reset tombol
+                resetButton();
             },
             onClose: function(){
-                // FIX PENTING: Jika user tutup popup atau tekan Back di HP
                 console.log('Popup ditutup');
-                resetButton(); // Reset tombol agar tidak nyangkut
+                resetButton(); 
             }
         });
 
     } catch (error) {
         console.error("Error:", error);
-        alert("Gagal koneksi ke server.");
-        resetButton(); // Reset tombol jika error koneksi
+        alert("Gagal koneksi server.");
+        resetButton();
     }
   }
 
-  // --- UPDATE STOK SETELAH BAYAR SUKSES ---
+  // --- FUNGSI UPDATE STOK ---
   async function kurangiStokDiDatabase() {
     const userToken = "user_" + Math.floor(Math.random() * 10000);
     let suksesCount = 0;
@@ -288,15 +320,13 @@
 
     // Reset Keranjang
     cart = []; 
-    saveCart();
+    localStorage.removeItem("cart"); // Hapus dari memori HP juga
     renderCart();
     fetchProducts(); 
     
-    // Pastikan tombol direset (double check)
     document.getElementById("btn-bayar").innerHTML = "Bayar Sekarang";
     document.getElementById("btn-bayar").disabled = false;
-    
-    alert("Stok berhasil diperbarui!");
+    alert("Transaksi Selesai!");
   }
 
 </script>
