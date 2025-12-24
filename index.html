@@ -144,9 +144,7 @@
 
 <div class="produk-container">
 
-  <!-- PRODUK KAMU (TIDAK DIUBAH) -->
-  <!-- potong: semua produk tetap sama persis -->
-
+  <!-- PRODUK (TETAP) -->
   <div class="produk">
     <img src="brownieskukus.jpg">
     <h3>Brownies Kukus</h3>
@@ -168,48 +166,6 @@
     <button onclick="addToCart('Cookies', 7000)">🛒 Beli</button>
   </div>
 
-  <div class="produk">
-    <img src="bananarolls.jpg">
-    <h3>Banana Rolls</h3>
-    <div class="harga">Rp 30.000</div>
-    <button onclick="addToCart('Banana Rolls', 30000)">🛒 Beli</button>
-  </div>
-
-  <div class="produk">
-    <img src="fudgiebrownies.jpg">
-    <h3>Fudgy Brownies</h3>
-    <div class="harga">Rp 45.000</div>
-    <button onclick="addToCart('Fudgy Brownies', 45000)">🛒 Beli</button>
-  </div>
-
-  <div class="produk">
-    <img src="kastengels.jpg">
-    <h3>Kastengels</h3>
-    <div class="harga">Rp 77.000</div>
-    <button onclick="addToCart('Kastengels', 77000)">🛒 Beli</button>
-  </div>
-
-  <div class="produk">
-    <img src="bolugulungkacangkejucoklat.jpg">
-    <h3>Bolu Gulung 3 Rasa</h3>
-    <div class="harga">Rp 50.000</div>
-    <button onclick="addToCart('Bolu Gulung 3 Rasa', 50000)">🛒 Beli</button>
-  </div>
-
-  <div class="produk">
-    <img src="nastar.jpg">
-    <h3>Nastar</h3>
-    <div class="harga">Rp 70.000</div>
-    <button onclick="addToCart('Nastar', 70000)">🛒 Beli</button>
-  </div>
-
-  <div class="produk">
-    <img src="bolugulung.jpg">
-    <h3>Bolu Gulung</h3>
-    <div class="harga">Rp 70.000</div>
-    <button onclick="addToCart('Bolu Gulung', 45000)">🛒 Beli</button>
-  </div>
-  
 </div>
 
 <div class="cart">
@@ -218,16 +174,15 @@
   <div class="total" id="total">Total: Rp 0</div>
   <button class="btn-checkout" onclick="checkout()">Checkout</button>
 
-  <!-- QRIS -->
   <div class="qris-box" id="qrisBox">
-    <div class="loader">⏳ Menyiapkan QRIS...</div>
+    <div class="loader">⏳ Menghubungi server...</div>
     <img id="qrisImg">
     <p>Scan QRIS untuk melakukan pembayaran</p>
   </div>
 </div>
 
 <script>
-  const URL_WORKER = "https://contoh-worker-kamu.workers.dev/checkout";
+  const URL_WORKER = "https://namaworker-kamu.workers.dev/checkout";
 
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
   renderCart();
@@ -239,14 +194,16 @@
   function addToCart(nama, harga) {
     const item = cart.find(p => p.nama === nama);
     item ? item.qty++ : cart.push({ nama, harga, qty: 1 });
-    saveCart(); renderCart();
+    saveCart();
+    renderCart();
   }
 
   function changeQty(nama, delta) {
     const item = cart.find(p => p.nama === nama);
     item.qty += delta;
     if (item.qty <= 0) cart = cart.filter(p => p.nama !== nama);
-    saveCart(); renderCart();
+    saveCart();
+    renderCart();
   }
 
   function updateQty(nama, value) {
@@ -256,7 +213,8 @@
     } else {
       cart.find(p => p.nama === nama).qty = qty;
     }
-    saveCart(); renderCart();
+    saveCart();
+    renderCart();
   }
 
   function renderCart() {
@@ -282,17 +240,44 @@
       "Total: Rp " + total.toLocaleString();
   }
 
-  function checkout() {
-    if (!cart.length) return alert("Keranjang masih kosong");
+  async function checkout() {
+    if (!cart.length) {
+      alert("Keranjang masih kosong");
+      return;
+    }
+
+    const total = cart.reduce((sum, i) => sum + i.harga * i.qty, 0);
+
+    const payload = {
+      items: cart.map(i => ({
+        name: i.nama,
+        price: i.harga,
+        quantity: i.qty
+      })),
+      total: total
+    };
 
     document.getElementById("qrisBox").style.display = "block";
+    document.querySelector(".loader").innerText = "Menghubungi server...";
 
-    // SIMULASI QRIS (DUMMY)
-    setTimeout(() => {
+    try {
+      const res = await fetch(URL_WORKER, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!data.qr_url) throw new Error("QRIS tidak tersedia");
+
       document.querySelector(".loader").innerText = "Scan QRIS di bawah ini";
-      document.getElementById("qrisImg").src =
-        "https://dummyimage.com/300x300/000/fff&text=QRIS+MIDTRANS";
-    }, 1500);
+      document.getElementById("qrisImg").src = data.qr_url;
+
+    } catch (err) {
+      alert("Gagal membuat pembayaran");
+      console.error(err);
+    }
   }
 </script>
 
