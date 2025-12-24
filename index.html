@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <title>Toko Cake and Cookies AAA</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -79,6 +80,9 @@
   <div class="total" id="total">Total: Rp 0</div>
   
   <button class="btn-checkout" id="btn-bayar" onclick="mulaiPembayaranMidtrans()">Bayar Sekarang</button>
+  <p style="text-align: center; font-size: 12px; color: #888; margin-top: 10px;">
+    *Jika batal bayar, mohon klik tanda silang (X) di pojok kanan atas popup.
+  </p>
 </div>
 
 <script type="text/javascript"
@@ -190,7 +194,7 @@
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
   // ==========================================================
-  // LOGIKA PEMBAYARAN MIDTRANS (Baru)
+  // LOGIKA PEMBAYARAN MIDTRANS (FIX TOMBOL RESET)
   // ==========================================================
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
@@ -202,58 +206,58 @@
     });
 
     const btn = document.getElementById("btn-bayar");
-    btn.innerHTML = "⏳ Menghubungkan Midtrans...";
+    btn.innerHTML = "⏳ Proses...";
     btn.disabled = true;
 
+    // --- FUNGSI RESET TOMBOL (Fix Mobile & Close) ---
+    const resetButton = () => {
+        btn.innerHTML = "Bayar Sekarang";
+        btn.disabled = false;
+    };
+
     try {
-        // 1. Minta Token ke Cloudflare Worker (yang sudah kita bahas tadi)
-        // Pastikan Worker kamu punya rute '/api/get-token'
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 gross_amount: totalBayar,
-                // Kamu bisa kirim detail item juga jika Worker-mu mendukung
             }) 
         });
 
         const data = await response.json();
         
         if (!data.token) {
-            alert("Gagal mendapatkan token pembayaran. Cek Server Key di Worker.");
-            btn.innerHTML = "Bayar Sekarang";
-            btn.disabled = false;
+            alert("Gagal koneksi atau Server Key salah.");
+            resetButton(); // Reset tombol jika gagal token
             return;
         }
 
-        // 2. Munculkan Pop-up Snap Midtrans
+        // Munculkan Pop-up Snap Midtrans
         window.snap.pay(data.token, {
             onSuccess: function(result){
-                // Pembayaran Sukses! -> Lanjut kurangi Stok
-                alert("Pembayaran Berhasil!");
+                alert("Pembayaran Berhasil! Memproses stok...");
                 kurangiStokDiDatabase();
+                resetButton(); // Reset tombol
             },
             onPending: function(result){
                 alert("Menunggu pembayaran Anda!");
-                console.log(result);
+                resetButton(); // Reset tombol supaya user bisa klik lagi/edit
             },
             onError: function(result){
                 alert("Pembayaran Gagal!");
-                btn.innerHTML = "Bayar Sekarang";
-                btn.disabled = false;
+                resetButton(); // Reset tombol
             },
             onClose: function(){
-                alert('Anda menutup popup tanpa menyelesaikan pembayaran');
-                btn.innerHTML = "Bayar Sekarang";
-                btn.disabled = false;
+                // FIX PENTING: Jika user tutup popup atau tekan Back di HP
+                console.log('Popup ditutup');
+                resetButton(); // Reset tombol agar tidak nyangkut
             }
         });
 
     } catch (error) {
         console.error("Error:", error);
         alert("Gagal koneksi ke server.");
-        btn.innerHTML = "Bayar Sekarang";
-        btn.disabled = false;
+        resetButton(); // Reset tombol jika error koneksi
     }
   }
 
@@ -262,7 +266,6 @@
     const userToken = "user_" + Math.floor(Math.random() * 10000);
     let suksesCount = 0;
 
-    // Loop kirim data per item ke server (sama seperti logika lama kamu)
     for (const item of cart) {
       try {
         const payload = {
@@ -288,8 +291,11 @@
     saveCart();
     renderCart();
     fetchProducts(); 
+    
+    // Pastikan tombol direset (double check)
     document.getElementById("btn-bayar").innerHTML = "Bayar Sekarang";
     document.getElementById("btn-bayar").disabled = false;
+    
     alert("Stok berhasil diperbarui!");
   }
 
