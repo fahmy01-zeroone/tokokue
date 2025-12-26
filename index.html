@@ -10,16 +10,15 @@
     /* RESET UMUM */
     body { font-family: 'Poppins', sans-serif; background: #f6f6f6; padding: 20px; margin: 0; }
     
-    h1 { text-align: center; margin-bottom: 5px; font-size: 26px; } /* Huruf Judul diperbesar sedikit */
+    /* Saya tambahkan transisi agar perubahan teks halus */
+    h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; } 
     .subtitle { text-align: center; color: #555; margin-bottom: 30px; font-size: 15px; }
     
     /* --- PERBAIKAN TAMPILAN (LEBAR) DI SINI --- */
     .produk-container {
       display: grid;
-      /* Grid responsif: Di HP 2 kolom (jika muat) atau 1, Di PC banyak kolom */
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
       gap: 20px;
-      /* DULU 900px, SEKARANG 1200px BIAR LEGA DI PC */
       max-width: 1200px; 
       margin: auto;
     }
@@ -31,7 +30,6 @@
       display: flex; flex-direction: column; justify-content: space-between;
     }
     
-    /* Efek hover khusus PC biar interaktif */
     .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
 
     .produk img {
@@ -58,7 +56,6 @@
 
     /* --- KERANJANG --- */
     .cart {
-      /* DULU 900px, SEKARANG 1200px JUGA */
       max-width: 1200px; 
       margin: 40px auto 20px; background: white;
       padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
@@ -79,11 +76,9 @@
       margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px;
     }
     
-    /* Tampilan Item di Keranjang */
     .item-info strong { font-size: 16px; color: #333; }
     .item-info small { color: #888; font-size: 13px; }
 
-    /* TOMBOL PLUS MINUS YANG NYAMAN (HP & PC) */
     .qty { display: flex; align-items: center; gap: 5px; }
     .qty button { 
       padding: 0; width: 32px; height: 32px; font-size: 18px; 
@@ -109,7 +104,7 @@
 
 <body>
 
-<h1>🍰 Toko Cake AAA</h1>
+<h1 id="pesan-layar">🍰 Toko Cake AAA</h1>
 <p class="subtitle">Brownies, cake & cookies homemade (Live Stock)</p>
 
 <div class="produk-container" id="produk-list">
@@ -256,7 +251,7 @@
 
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
-  // --- MIDTRANS LOGIC ---
+  // --- MIDTRANS LOGIC (UPDATE BAGIAN SINI) ---
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
 
@@ -287,11 +282,26 @@
         }
 
         window.snap.pay(data.token, {
+            // === BAGIAN YANG SAYA UBAH (SUKSES) ===
             onSuccess: function(result){
-                alert("Pembayaran Berhasil! Stok berkurang.");
+                console.log("Pembayaran Sukses!", result);
+
+                // 1. Ubah Judul Layar Menjadi Pesan Terima Kasih
+                const judul = document.getElementById("pesan-layar");
+                if (judul) {
+                    judul.innerText = "TERIMA KASIH! SILAKAN AMBIL KUE 🍰";
+                    judul.style.color = "#27ae60"; // Jadi warna hijau
+                }
+
+                // 2. Tampilkan Alert
+                alert("Pembayaran Berhasil! Stok berkurang & Silakan ambil pesanan Anda 👇");
+
+                // 3. Proses Backend (Tetap jalan)
                 kurangiStokDiDatabase(); 
                 resetButton();
             },
+            // ======================================
+
             onPending: function(result){
                 alert("Menunggu pembayaran...");
                 resetButton();
