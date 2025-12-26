@@ -100,7 +100,7 @@
     
     .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; margin: 40px 0; }
 
-    /* --- FOOTER & MODAL STYLES (BARU) --- */
+    /* --- FOOTER & MODAL STYLES --- */
     .footer {
       text-align: center; margin-top: 40px; padding: 20px; 
       border-top: 1px solid #ddd; color: #777; font-size: 14px;
@@ -125,7 +125,7 @@
       background-color: #fff; margin: auto; padding: 30px;
       border-radius: 12px; width: 90%; max-width: 600px;
       position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      max-height: 80vh; overflow-y: auto;
+      max-height: 80vh; overflow-y: auto; /* Agar bisa discroll jika panjang */
     }
 
     .close-modal {
@@ -134,9 +134,13 @@
     }
     .close-modal:hover { color: #000; }
 
-    .modal-body h2 { color: #333; margin-top: 0; }
-    .modal-body p, .modal-body li { color: #555; line-height: 1.6; font-size: 15px; }
-    .modal-body ul { padding-left: 20px; }
+    .modal-body h2 { color: #333; margin-top: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 20px; }
+    .modal-body h3 { font-size: 16px; margin-top: 15px; color: #d35400; }
+    .modal-body p, .modal-body li { color: #555; line-height: 1.6; font-size: 14px; }
+    .modal-body ul { padding-left: 20px; margin-bottom: 15px; }
+    
+    /* Garis pemisah antara Refund & T&C */
+    .separator { border: 0; border-top: 1px dashed #ccc; margin: 30px 0; }
   </style>
 </head>
 
@@ -166,40 +170,49 @@
 
 <div class="footer">
   &copy; 2025 Toko Cake and Cookies AAA.<br>
-  <a onclick="openRefundModal()">Kebijakan Pengembalian Dana (Refund Policy)</a>
+  <a onclick="openRefundModal()">Kebijakan Toko & Syarat Ketentuan (S&K)</a>
 </div>
 
 <div id="refundModal" class="modal-overlay">
   <div class="modal-content">
     <span class="close-modal" onclick="closeRefundModal()">&times;</span>
     <div class="modal-body">
-      <h2>Kebijakan Pengembalian & Penukaran</h2>
-      <p>Terima kasih telah berkunjung ke <strong>Toko Cake and Cookies AAA</strong>. Demi kenyamanan bersama, berikut adalah ketentuan layanan kami:</p>
+      
+      <h2>Kebijakan Pengembalian (Refund)</h2>
       
       <h3>1. Wajib Cek di Kasir</h3>
-      <p>Mohon periksa kondisi fisik kue/cookies (varian, tulisan, dan keutuhan bentuk) <strong>sebelum meninggalkan area kasir/toko</strong>. Komplain mengenai bentuk hancur atau salah varian setelah Anda meninggalkan toko <strong>tidak dapat kami terima</strong>.</p>
+      <p>Mohon periksa kondisi fisik kue/cookies <strong>sebelum meninggalkan area kasir/toko</strong>. Komplain mengenai bentuk hancur atau salah varian setelah Anda meninggalkan toko tidak dapat kami terima.</p>
 
       <h3>2. Kerusakan di Perjalanan</h3>
-      <p>Kami memastikan produk dalam kondisi sempurna saat diserahkan. Segala kerusakan yang terjadi selama perjalanan pulang (misal: kue miring, topping berantakan, atau toples pecah karena guncangan kendaraan pembeli) adalah di luar tanggung jawab kami.</p>
+      <p>Segala kerusakan yang terjadi selama perjalanan pulang (misal: kue miring atau toples pecah karena guncangan) adalah di luar tanggung jawab kami.</p>
 
-      <h3>3. Kondisi yang Diterima untuk Refund/Tukar</h3>
-      <p>Kami menerima pengembalian dana atau penukaran produk HANYA jika:</p>
+      <h3>3. Kondisi yang Diterima untuk Refund</h3>
       <ul>
-        <li>Produk ternyata <strong>basi/berjamur</strong> saat dipotong/dibuka di rumah (dalam kurun waktu 1x24 jam).</li>
+        <li>Produk ternyata <strong>basi/berjamur</strong> saat dibuka (maksimal 1x24 jam).</li>
         <li>Terdapat benda asing di dalam makanan.</li>
-        <li>Kesalahan fatal dari pihak dapur (misal: kue rasa coklat ternyata isinya keju) yang tidak terlihat dari luar.</li>
+        <li>Kesalahan fatal dari dapur yang tidak terlihat dari luar.</li>
       </ul>
 
-      <h3>4. Syarat Klaim</h3>
-      <p>Jika memenuhi poin nomor 3, silakan kembali ke toko kami dengan membawa:</p>
-      <ul>
-        <li><strong>Sisa produk</strong> (minimal 80% utuh) untuk kami cek di lab dapur.</li>
-        <li><strong>Struk/Nota Pembelian</strong> fisik atau digital.</li>
-      </ul>
+      <hr class="separator">
+
+      <h2>Syarat & Ketentuan (T&C)</h2>
+      
+      <h3>1. Pemesanan & Stok (Live Stock)</h3>
+      <p>Sistem kami menggunakan <em>Real-time Stock</em>. Produk di keranjang belum resmi milik Anda sampai pembayaran dikonfirmasi. Siapa cepat dia dapat.</p>
+
+      <h3>2. Pembayaran</h3>
+      <p>Pembayaran online diproses melalui Payment Gateway (Midtrans). Biaya transaksi atau admin yang muncul (jika ada) ditanggung oleh pembeli. Pembayaran yang sudah sukses tidak dapat dibatalkan sepihak.</p>
+
+      <h3>3. Informasi Alergen (Penting!)</h3>
+      <p>Produk kami diproduksi di dapur yang juga mengolah <strong>kacang-kacangan, susu, telur, dan tepung terigu (gluten)</strong>. Harap berhati-hati bagi yang memiliki alergi berat.</p>
+
+      <h3>4. Keadaan Kahar (Force Majeure)</h3>
+      <p>Jika terjadi bencana alam atau mati listrik massal yang membuat kami gagal memproduksi pesanan Anda, kami berhak membatalkan pesanan dan mengembalikan dana (refund) 100%.</p>
 
       <p style="margin-top:20px; font-size:13px; color:#888; text-align:center;">
-        <em>Membeli berarti setuju dengan kebijakan ini. Terima kasih atas pengertiannya.</em>
+        <em>Dengan berbelanja di sini, Anda dianggap telah membaca dan menyetujui seluruh kebijakan di atas.</em>
       </p>
+
     </div>
   </div>
 </div>
@@ -233,7 +246,7 @@
     renderCart();
   });
 
-  // --- LOGIC MODAL REFUND (BARU) ---
+  // --- LOGIC MODAL ---
   const modal = document.getElementById("refundModal");
 
   function openRefundModal() {
