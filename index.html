@@ -99,6 +99,44 @@
     .btn-checkout:hover { background: #0076d1; }
     
     .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; margin: 40px 0; }
+
+    /* --- FOOTER & MODAL STYLES (BARU) --- */
+    .footer {
+      text-align: center; margin-top: 40px; padding: 20px; 
+      border-top: 1px solid #ddd; color: #777; font-size: 14px;
+    }
+    .footer a {
+      color: #555; text-decoration: none; font-weight: 600; cursor: pointer;
+    }
+    .footer a:hover { color: #d35400; text-decoration: underline; }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      display: none; /* Hidden by default */
+      position: fixed; z-index: 1000; left: 0; top: 0;
+      width: 100%; height: 100%; overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+
+    /* Modal Content */
+    .modal-content {
+      background-color: #fff; margin: auto; padding: 30px;
+      border-radius: 12px; width: 90%; max-width: 600px;
+      position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      max-height: 80vh; overflow-y: auto;
+    }
+
+    .close-modal {
+      color: #aaa; float: right; font-size: 28px; font-weight: bold;
+      cursor: pointer; position: absolute; right: 20px; top: 10px;
+    }
+    .close-modal:hover { color: #000; }
+
+    .modal-body h2 { color: #333; margin-top: 0; }
+    .modal-body p, .modal-body li { color: #555; line-height: 1.6; font-size: 15px; }
+    .modal-body ul { padding-left: 20px; }
   </style>
 </head>
 
@@ -124,6 +162,43 @@
   <p style="text-align: center; font-size: 13px; color: #888; margin-top: 15px;">
     *Jika batal bayar, mohon klik tanda silang (X) di pojok kanan atas popup.
   </p>
+</div>
+
+<div class="footer">
+  &copy; 2024 Toko Cake and Cookies AAA.<br>
+  <a onclick="openRefundModal()">Kebijakan Pengembalian Dana (Refund Policy)</a>
+</div>
+
+<div id="refundModal" class="modal-overlay">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeRefundModal()">&times;</span>
+    <div class="modal-body">
+      <h2>Kebijakan Pengembalian Dana</h2>
+      <p>Terima kasih telah berbelanja di <strong>Toko Cake and Cookies AAA</strong>. Kami ingin memastikan Anda puas dengan produk kami. Berikut adalah kebijakan pengembalian dana kami:</p>
+      
+      <h3>1. Kondisi Pengembalian</h3>
+      <p>Karena produk kami adalah makanan (perishable goods), kami <strong>tidak menerima pengembalian</strong> (retur) jika alasan pengembalian adalah perubahan pikiran atau selera.</p>
+      <p>Pengembalian dana (refund) atau penukaran produk hanya dapat dilakukan jika:</p>
+      <ul>
+        <li>Produk diterima dalam keadaan <strong>rusak parah / hancur</strong> saat pengiriman.</li>
+        <li>Produk yang diterima <strong>basi atau tidak layak konsumsi</strong> pada saat paket dibuka.</li>
+        <li>Terjadi <strong>kesalahan varian</strong> produk yang kami kirimkan.</li>
+      </ul>
+
+      <h3>2. Batas Waktu Komplain</h3>
+      <p>Komplain wajib diajukan maksimal <strong>1 x 24 jam</strong> setelah paket diterima (berdasarkan tracking kurir).</p>
+
+      <h3>3. Cara Mengajukan Refund</h3>
+      <p>Silakan hubungi admin kami melalui WhatsApp dengan menyertakan:</p>
+      <ul>
+        <li>Nomor Pesanan / Bukti Pembayaran.</li>
+        <li><strong>Video Unboxing</strong> (Wajib tanpa jeda) saat membuka paket.</li>
+        <li>Foto kondisi produk yang rusak.</li>
+      </ul>
+
+      <p><em>Kami berhak menolak pengajuan refund jika tidak disertai bukti yang valid.</em></p>
+    </div>
+  </div>
 </div>
 
 <script type="text/javascript"
@@ -154,6 +229,24 @@
     fetchProducts();
     renderCart();
   });
+
+  // --- LOGIC MODAL REFUND (BARU) ---
+  const modal = document.getElementById("refundModal");
+
+  function openRefundModal() {
+    modal.style.display = "flex";
+  }
+
+  function closeRefundModal() {
+    modal.style.display = "none";
+  }
+
+  // Tutup modal jika klik di luar area putih
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
 
   // --- FUNGSI AMBIL DATA ---
   async function fetchProducts() {
@@ -251,7 +344,7 @@
 
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
-  // --- MIDTRANS LOGIC (UPDATE BAGIAN SINI) ---
+  // --- MIDTRANS LOGIC ---
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
 
@@ -282,26 +375,17 @@
         }
 
         window.snap.pay(data.token, {
-            // === BAGIAN YANG SAYA UBAH (SUKSES) ===
             onSuccess: function(result){
                 console.log("Pembayaran Sukses!", result);
-
-                // 1. Ubah Judul Layar Menjadi Pesan Terima Kasih
                 const judul = document.getElementById("pesan-layar");
                 if (judul) {
                     judul.innerText = "TERIMA KASIH! SILAKAN AMBIL KUE 🍰";
-                    judul.style.color = "#27ae60"; // Jadi warna hijau
+                    judul.style.color = "#27ae60"; 
                 }
-
-                // 2. Tampilkan Alert
                 alert("Pembayaran Berhasil! Stok berkurang & Silakan ambil pesanan Anda 👇");
-
-                // 3. Proses Backend (Tetap jalan)
                 kurangiStokDiDatabase(); 
                 resetButton();
             },
-            // ======================================
-
             onPending: function(result){
                 alert("Menunggu pembayaran...");
                 resetButton();
