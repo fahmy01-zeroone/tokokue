@@ -10,11 +10,10 @@
     /* RESET UMUM */
     body { font-family: 'Poppins', sans-serif; background: #f6f6f6; padding: 20px; margin: 0; }
     
-    /* Saya tambahkan transisi agar perubahan teks halus */
     h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; } 
     .subtitle { text-align: center; color: #555; margin-bottom: 30px; font-size: 15px; }
     
-    /* --- PERBAIKAN TAMPILAN (LEBAR) DI SINI --- */
+    /* --- PRODUK --- */
     .produk-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); 
@@ -100,32 +99,49 @@
     
     .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; margin: 40px 0; }
 
-    /* --- FOOTER & MODAL STYLES --- */
+    /* --- FOOTER & CONTACT (BARU) --- */
     .footer {
-      text-align: center; margin-top: 40px; padding: 20px; 
+      text-align: center; margin-top: 40px; padding: 30px 20px; 
       border-top: 1px solid #ddd; color: #777; font-size: 14px;
+      background-color: #fff; border-radius: 14px;
     }
-    .footer a {
-      color: #555; text-decoration: none; font-weight: 600; cursor: pointer;
+    
+    /* Style khusus untuk Kontak */
+    .contact-box {
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
     }
-    .footer a:hover { color: #d35400; text-decoration: underline; }
+    .contact-box h4 { margin: 0 0 10px; color: #333; font-size: 16px; }
+    .contact-link {
+      display: inline-block; margin: 5px 10px;
+      color: #555; text-decoration: none; font-weight: 600;
+      padding: 8px 15px; background: #f9f9f9; border-radius: 20px;
+      transition: all 0.2s; border: 1px solid #eee;
+    }
+    .contact-link:hover {
+      background: #fff; color: #d35400; border-color: #d35400;
+      transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
 
-    /* Modal Overlay */
+    .footer a.policy-link {
+      color: #888; text-decoration: none; font-size: 13px; cursor: pointer;
+    }
+    .footer a.policy-link:hover { color: #d35400; text-decoration: underline; }
+
+    /* --- MODAL STYLES --- */
     .modal-overlay {
-      display: none; /* Hidden by default */
-      position: fixed; z-index: 1000; left: 0; top: 0;
+      display: none; position: fixed; z-index: 1000; left: 0; top: 0;
       width: 100%; height: 100%; overflow: auto;
-      background-color: rgba(0,0,0,0.5);
-      backdrop-filter: blur(4px);
+      background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
       align-items: center; justify-content: center;
     }
 
-    /* Modal Content */
     .modal-content {
       background-color: #fff; margin: auto; padding: 30px;
       border-radius: 12px; width: 90%; max-width: 600px;
       position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      max-height: 80vh; overflow-y: auto; /* Agar bisa discroll jika panjang */
+      max-height: 80vh; overflow-y: auto;
     }
 
     .close-modal {
@@ -138,8 +154,6 @@
     .modal-body h3 { font-size: 16px; margin-top: 15px; color: #d35400; }
     .modal-body p, .modal-body li { color: #555; line-height: 1.6; font-size: 14px; }
     .modal-body ul { padding-left: 20px; margin-bottom: 15px; }
-    
-    /* Garis pemisah antara Refund & T&C */
     .separator { border: 0; border-top: 1px dashed #ccc; margin: 30px 0; }
   </style>
 </head>
@@ -169,8 +183,19 @@
 </div>
 
 <div class="footer">
+  
+  <div class="contact-box">
+    <h4>Hubungi Kami:</h4>
+    <a href="https://instagram.com/tokocakeaaa" target="_blank" class="contact-link">
+      📸 Instagram
+    </a>
+    <a href="mailto:halo@tokocakeaaa.com" class="contact-link">
+      📧 Email Kami
+    </a>
+  </div>
+
   &copy; 2025 Toko Cake and Cookies AAA.<br>
-  <a onclick="openRefundModal()">Kebijakan Toko & Syarat Ketentuan (S&K)</a>
+  <a onclick="openRefundModal()" class="policy-link">Kebijakan Toko & Syarat Ketentuan (S&K)</a>
 </div>
 
 <div id="refundModal" class="modal-overlay">
