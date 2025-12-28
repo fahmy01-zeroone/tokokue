@@ -6,7 +6,6 @@
   <title>Toko Cake and Cookies AAA</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
@@ -57,11 +56,11 @@
     button.btn-beli:hover { background: #1da851; }
     button.btn-beli:disabled { background: #ccc; cursor: not-allowed; }
 
-    /* --- KERANJANG (UPDATED: LEBIH KECIL & CENTER) --- */
+    /* --- KERANJANG --- */
     .cart {
-      max-width: 500px; /* Diubah jadi 500px agar lebih ramping */
-      width: 100%;      /* Agar responsif di HP */
-      margin: 40px auto 20px; /* Auto kiri-kanan membuat posisi Center */
+      max-width: 500px;
+      width: 100%;      
+      margin: 40px auto 20px;
       background: white;
       padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     }
@@ -118,7 +117,6 @@
     }
     .contact-box h4 { margin: 0 0 15px; color: #333; font-size: 16px; }
 
-    /* Style Tombol Sosmed */
     .sosmed-btn {
       display: inline-flex; align-items: center; gap: 8px;
       text-decoration: none; color: white; font-weight: 600;
@@ -131,11 +129,8 @@
     }
     .sosmed-btn i { font-size: 20px; }
 
-    /* Warna WhatsApp */
     .btn-wa { background-color: #25D366; }
     .btn-wa:hover { background-color: #1da851; }
-
-    /* Warna Instagram */
     .btn-ig { 
       background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); 
     }
@@ -199,20 +194,15 @@
 </div>
 
 <div class="footer">
-  
   <div class="contact-box">
     <h4>Hubungi Kami:</h4>
-    
     <a href="https://wa.me/6282328071728" target="_blank" class="sosmed-btn btn-wa">
       <i class="fa-brands fa-whatsapp"></i> WhatsApp
     </a>
-
     <a href="https://instagram.com/aaa.cakecookies" target="_blank" class="sosmed-btn btn-ig">
       <i class="fa-brands fa-instagram"></i> Instagram
     </a>
-
   </div>
-
   &copy; 2025 Toko Cake and Cookies AAA.<br>
   <a onclick="openRefundModal()" class="policy-link">Kebijakan Toko & Syarat Ketentuan (S&K)</a>
 </div>
@@ -221,42 +211,30 @@
   <div class="modal-content">
     <span class="close-modal" onclick="closeRefundModal()">&times;</span>
     <div class="modal-body">
-      
       <h2>Kebijakan Pengembalian (Refund)</h2>
-      
       <h3>1. Wajib Cek di Kasir</h3>
       <p>Mohon periksa kondisi fisik kue/cookies <strong>sebelum meninggalkan area kasir/toko</strong>. Komplain mengenai bentuk hancur atau salah varian setelah Anda meninggalkan toko tidak dapat kami terima.</p>
-
       <h3>2. Kerusakan di Perjalanan</h3>
       <p>Segala kerusakan yang terjadi selama perjalanan pulang (misal: kue miring atau toples pecah karena guncangan) adalah di luar tanggung jawab kami.</p>
-
       <h3>3. Kondisi yang Diterima untuk Refund</h3>
       <ul>
         <li>Produk ternyata <strong>basi/berjamur</strong> saat dibuka (maksimal 1x24 jam).</li>
         <li>Terdapat benda asing di dalam makanan.</li>
         <li>Kesalahan fatal dari dapur yang tidak terlihat dari luar.</li>
       </ul>
-
       <hr class="separator">
-
       <h2>Syarat & Ketentuan (T&C)</h2>
-      
       <h3>1. Pemesanan & Stok (Live Stock)</h3>
       <p>Sistem kami menggunakan <em>Real-time Stock</em>. Produk di keranjang belum resmi milik Anda sampai pembayaran dikonfirmasi. Siapa cepat dia dapat.</p>
-
       <h3>2. Pembayaran</h3>
       <p>Pembayaran online diproses melalui Payment Gateway (Midtrans). Biaya transaksi atau admin yang muncul (jika ada) ditanggung oleh pembeli. Pembayaran yang sudah sukses tidak dapat dibatalkan sepihak.</p>
-
       <h3>3. Informasi Alergen (Penting!)</h3>
       <p>Produk kami diproduksi di dapur yang juga mengolah <strong>kacang-kacangan, susu, telur, dan tepung terigu (gluten)</strong>. Harap berhati-hati bagi yang memiliki alergi berat.</p>
-
       <h3>4. Keadaan Kahar (Force Majeure)</h3>
       <p>Jika terjadi bencana alam atau mati listrik massal yang membuat kami gagal memproduksi pesanan Anda, kami berhak membatalkan pesanan dan mengembalikan dana (refund) 100%.</p>
-
       <p style="margin-top:20px; font-size:13px; color:#888; text-align:center;">
         <em>Dengan berbelanja di sini, Anda dianggap telah membaca dan menyetujui seluruh kebijakan di atas.</em>
       </p>
-
     </div>
   </div>
 </div>
@@ -267,6 +245,7 @@
 </script>
 
 <script>
+  // GANTI URL INI DENGAN URL WORKER KAMU
   const API_BASE_URL = "https://vending-machine-server.fahmyainun.workers.dev"; 
 
   const productImages = {
@@ -292,20 +271,9 @@
 
   // --- LOGIC MODAL ---
   const modal = document.getElementById("refundModal");
-
-  function openRefundModal() {
-    modal.style.display = "flex";
-  }
-
-  function closeRefundModal() {
-    modal.style.display = "none";
-  }
-
-  window.onclick = function(event) {
-    if (event.target == modal) {
-      modal.style.display = "none";
-    }
-  }
+  function openRefundModal() { modal.style.display = "flex"; }
+  function closeRefundModal() { modal.style.display = "none"; }
+  window.onclick = function(event) { if (event.target == modal) modal.style.display = "none"; }
 
   // --- FUNGSI AMBIL DATA ---
   async function fetchProducts() {
@@ -339,7 +307,7 @@
     });
   }
 
-  // --- FUNGSI KERANJANG (Safe Logic) ---
+  // --- FUNGSI KERANJANG ---
   function addToCart(id, nama, harga, maxStock) {
     const item = cart.find(p => p.id === id);
     if (item) {
@@ -354,13 +322,10 @@
   function changeQty(id, delta) {
     const item = cart.find(p => p.id === id);
     if (!item) return;
-    
     const newQty = item.qty + delta;
     if (delta > 0 && newQty > item.maxStock) return alert("Stok mentok!");
-
     item.qty = newQty;
     if (item.qty <= 0) cart = cart.filter(p => p.id !== id);
-    
     saveCart(); renderCart();
   }
 
@@ -375,13 +340,11 @@
   function renderCart() {
     const el = document.getElementById("cart-items");
     el.innerHTML = "";
-    
     if (cart.length === 0) {
         el.innerHTML = "<p style='text-align:center; color:#999; padding:20px;'>Keranjang belanja Anda kosong.</p>";
         document.getElementById("total").innerText = "Total: Rp 0";
         return;
     }
-
     let total = 0;
     cart.forEach(i => {
       total += i.harga * i.qty;
@@ -403,7 +366,9 @@
 
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
-  // --- MIDTRANS LOGIC ---
+  // ==========================================================
+  // --- BAGIAN INI YANG SAYA PERBAIKI (IMPORTANT FIX) ---
+  // ==========================================================
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
 
@@ -414,16 +379,25 @@
     btn.innerHTML = "⏳ Memproses...";
     btn.disabled = true;
 
+    // 1. KITA BIKIN KTP (ID) DULU DISINI
+    // Supaya Midtrans dan Database punya ID yang sama persis
+    const myOrderId = "ORDER-" + Date.now(); 
+
     const resetButton = () => {
         btn.innerHTML = "Bayar Sekarang";
         btn.disabled = false;
     };
 
     try {
+        // 2. MINTA TOKEN KE SERVER DENGAN MENGIRIM ID KITA
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ gross_amount: totalBayar }) 
+            body: JSON.stringify({ 
+                gross_amount: totalBayar,
+                order_id: myOrderId, // <--- KIRIM ID KE MIDTRANS
+                product_name: "Aneka Kue AAA"
+            }) 
         });
 
         const data = await response.json();
@@ -436,13 +410,16 @@
         window.snap.pay(data.token, {
             onSuccess: function(result){
                 console.log("Pembayaran Sukses!", result);
+                
+                // 3. JIKA SUKSES, SIMPAN KE DATABASE DENGAN ID YANG SAMA
+                kurangiStokDiDatabase(myOrderId); // <--- BAWA ID KE FUNGSI INI
+
                 const judul = document.getElementById("pesan-layar");
                 if (judul) {
                     judul.innerText = "TERIMA KASIH! SILAKAN AMBIL KUE 🍰";
                     judul.style.color = "#27ae60"; 
                 }
                 alert("Pembayaran Berhasil! Stok berkurang & Silakan ambil pesanan Anda 👇");
-                kurangiStokDiDatabase(); 
                 resetButton();
             },
             onPending: function(result){
@@ -465,8 +442,11 @@
     }
   }
 
-  async function kurangiStokDiDatabase() {
-    const userToken = "user_" + Math.floor(Math.random() * 10000);
+  // FUNGSI INI SEKARANG MENERIMA ID DARI LUAR
+  async function kurangiStokDiDatabase(orderIdYangSama) {
+    // Kita hapus pembuatan ID acak (random) disini
+    // Kita pakai ID dari Midtrans
+    
     for (const item of cart) {
       try {
         await fetch(`${API_BASE_URL}/bayar`, {
@@ -474,7 +454,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             product_id: item.id,
-            user_token: userToken,
+            user_token: orderIdYangSama, // <--- PAKAI ID YANG SAMA
             quantity: item.qty
           })
         });
