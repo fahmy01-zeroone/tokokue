@@ -59,7 +59,7 @@
     /* --- KERANJANG --- */
     .cart {
       max-width: 500px;
-      width: 100%;      
+      width: 100%;       
       margin: 40px auto 20px;
       background: white;
       padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
@@ -101,6 +101,7 @@
       font-size: 18px; padding: 14px; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2); border-radius: 8px;
     }
     .btn-checkout:hover { background: #0076d1; }
+    .btn-checkout:disabled { background: #b2bec3; cursor: not-allowed; }
     
     .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; margin: 40px 0; }
 
@@ -367,7 +368,7 @@
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
   // ==========================================================
-  // --- BAGIAN INI YANG SAYA PERBAIKI (IMPORTANT FIX) ---
+  // --- FUNGSI PEMBAYARAN YANG SUDAH DIPERBAIKI (AMAN) ---
   // ==========================================================
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
@@ -376,11 +377,10 @@
     cart.forEach(item => totalBayar += item.harga * item.qty);
 
     const btn = document.getElementById("btn-bayar");
-    btn.innerHTML = "⏳ Memproses...";
+    btn.innerHTML = "⏳ Memproses (Menyiapkan Database)...";
     btn.disabled = true;
 
-    // 1. KITA BIKIN KTP (ID) DULU DISINI
-    // Supaya Midtrans dan Database punya ID yang sama persis
+    // 1. GENERATE ID DISINI (TIDAK BOLEH BERUBAH)
     const myOrderId = "ORDER-" + Date.now(); 
 
     const resetButton = () => {
@@ -389,13 +389,19 @@
     };
 
     try {
-        // 2. MINTA TOKEN KE SERVER DENGAN MENGIRIM ID KITA
+        // 2. SIMPAN KE DATABASE DULU (WAJIB !!)
+        // Supaya saat Midtrans lapor, datanya SUDAH ADA.
+        console.log("Menyimpan order ke database...", myOrderId);
+        await simpanOrderKeDatabase(myOrderId);
+
+        // 3. BARU MINTA TOKEN (Pakai ID yang SAMA)
+        btn.innerHTML = "⏳ Menghubungi Bank...";
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 gross_amount: totalBayar,
-                order_id: myOrderId, // <--- KIRIM ID KE MIDTRANS
+                order_id: myOrderId, // <--- KIRIM ID YG SUDAH DISIMPAN TADI
                 product_name: "Aneka Kue AAA"
             }) 
         });
@@ -407,18 +413,24 @@
             resetButton(); return;
         }
 
+        // 4. MUNCULKAN POPUP
         window.snap.pay(data.token, {
             onSuccess: function(result){
                 console.log("Pembayaran Sukses!", result);
                 
-                // 3. JIKA SUKSES, SIMPAN KE DATABASE DENGAN ID YANG SAMA
-                kurangiStokDiDatabase(myOrderId); // <--- BAWA ID KE FUNGSI INI
-
+                // UI UPDATE SAJA (Database sudah diurus Midtrans Webhook)
                 const judul = document.getElementById("pesan-layar");
                 if (judul) {
                     judul.innerText = "TERIMA KASIH! SILAKAN AMBIL KUE 🍰";
                     judul.style.color = "#27ae60"; 
                 }
+                
+                // Bersihkan keranjang
+                cart = []; 
+                localStorage.removeItem("cart");
+                renderCart();
+                fetchProducts(); 
+                
                 alert("Pembayaran Berhasil! Stok berkurang & Silakan ambil pesanan Anda 👇");
                 resetButton();
             },
@@ -437,35 +449,28 @@
         });
     } catch (error) {
         console.error("Error:", error);
-        alert("Gagal koneksi server.");
+        alert("Terjadi kesalahan sistem. Cek koneksi internet.");
         resetButton();
     }
   }
 
-  // FUNGSI INI SEKARANG MENERIMA ID DARI LUAR
-  async function kurangiStokDiDatabase(orderIdYangSama) {
-    // Kita hapus pembuatan ID acak (random) disini
-    // Kita pakai ID dari Midtrans
-    
-    for (const item of cart) {
-      try {
-        await fetch(`${API_BASE_URL}/bayar`, {
+  // Fungsi helper untuk simpan ke DB
+  async function simpanOrderKeDatabase(orderId) {
+    // Kita loop cart dan simpan satu-satu
+    // Menggunakan Promise.all agar cepat (parallel)
+    const promises = cart.map(item => {
+        return fetch(`${API_BASE_URL}/bayar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             product_id: item.id,
-            user_token: orderIdYangSama, // <--- PAKAI ID YANG SAMA
+            user_token: orderId, // ID YANG SAMA
             quantity: item.qty
           })
         });
-      } catch (err) { console.error("Error stok:", err); }
-    }
-    cart = []; 
-    localStorage.removeItem("cart");
-    renderCart();
-    fetchProducts(); 
-    document.getElementById("btn-bayar").innerHTML = "Bayar Sekarang";
-    document.getElementById("btn-bayar").disabled = false;
+    });
+
+    await Promise.all(promises);
   }
 </script>
 
