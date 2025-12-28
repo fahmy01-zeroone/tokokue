@@ -33,10 +33,14 @@
     
     .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
 
+    /* --- BAGIAN INI YANG DIUBAH (GAMBAR DIPERBESAR 2X) --- */
     .produk img {
-      width: 100%; height: 160px; object-fit: cover;
+      width: 100%; 
+      height: 320px; /* <-- DARI 160px JADI 320px */
+      object-fit: cover;
       border-radius: 10px; margin-bottom: 10px;
     }
+    /* ---------------------------------------------------- */
 
     .stok-badge {
       position: absolute; top: 10px; right: 10px;
@@ -47,7 +51,7 @@
     .produk h3 { margin: 10px 0 5px; font-size: 18px; line-height: 1.2; }
     .harga { font-weight: 700; margin: 5px 0 15px; color: #d35400; font-size: 16px; }
     
-    /* Tombol Beli Default */
+    /* Tombol Beli Default (UKURAN TETAP SAMA) */
     button.btn-beli {
       background: #25D366; color: white; border: none;
       padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
@@ -182,13 +186,13 @@
 <div class="cart">
   <div class="cart-header">
     <h2 style="display: flex; align-items: center; gap: 10px; margin: 0;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="9" cy="21" r="1"></circle>
-    <circle cx="20" cy="21" r="1"></circle>
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-  </svg>
-  Keranjang Belanja
-</h2>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      Keranjang Belanja
+    </h2>
     <button class="btn-clear" onclick="hapusKeranjang()">🗑️ Hapus Semua</button>
   </div>
   
@@ -380,14 +384,15 @@
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
 
-    let totalBayar = 0;
-    cart.forEach(item => totalBayar += item.harga * item.qty);
+    // Frontend hanya menghitung buat tampilan user aja (Visual)
+    // Perhitungan ASLI nanti dilakukan ulang oleh Server
+    let estimasiTotal = 0;
+    cart.forEach(item => estimasiTotal += item.harga * item.qty);
 
     const btn = document.getElementById("btn-bayar");
     btn.innerHTML = "⏳ Memproses (Menyiapkan Database)...";
     btn.disabled = true;
 
-    // 1. GENERATE ID DISINI (TIDAK BOLEH BERUBAH)
     const myOrderId = "ORDER-" + Date.now(); 
 
     const resetButton = () => {
@@ -396,48 +401,57 @@
     };
 
     try {
-        // 2. SIMPAN KE DATABASE DULU (WAJIB !!)
-        // Supaya saat Midtrans lapor, datanya SUDAH ADA.
-        console.log("Menyimpan order ke database...", myOrderId);
+        // 1. SIMPAN KE DATABASE DULU (Tetap dilakukan)
+        // Fungsi ini looping fetch ke /bayar (Step 1 di worker)
         await simpanOrderKeDatabase(myOrderId);
 
-        // 3. BARU MINTA TOKEN (Pakai ID yang SAMA)
+        // 2. SIAPKAN DATA ITEM UNTUK DIKIRIM KE SERVER
+        // Kita TIDAK LAGI mengirim 'gross_amount' (total harga)
+        // Kita hanya kirim: "Saya beli P1 dua biji, P2 satu biji"
+        const itemsToSend = cart.map(item => ({
+            id: item.id,
+            quantity: item.qty
+        }));
+
         btn.innerHTML = "⏳ Menghubungi Bank...";
+        
+        // Request Token (Step 2 di worker)
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-                gross_amount: totalBayar,
-                order_id: myOrderId, // <--- KIRIM ID YG SUDAH DISIMPAN TADI
+                order_id: myOrderId,
+                items: itemsToSend, // <--- HANYA KIRIM ID DAN QTY
+                // gross_amount: 50000 <-- INI DIHAPUS. BIAR SERVER YG HITUNG.
                 product_name: "Aneka Kue AAA"
             }) 
         });
 
         const data = await response.json();
         
+        // Jika server mendeteksi harga tidak valid/error
+        if (data.error) {
+            alert("Error: " + data.error);
+            resetButton(); return;
+        }
+        
         if (!data.token) {
             alert("Gagal koneksi Token.");
             resetButton(); return;
         }
 
-        // 4. MUNCULKAN POPUP
         window.snap.pay(data.token, {
             onSuccess: function(result){
                 console.log("Pembayaran Sukses!", result);
-                
-                // UI UPDATE SAJA (Database sudah diurus Midtrans Webhook)
                 const judul = document.getElementById("pesan-layar");
                 if (judul) {
                     judul.innerText = "TERIMA KASIH! SILAKAN AMBIL KUE 🍰";
                     judul.style.color = "#27ae60"; 
                 }
-                
-                // Bersihkan keranjang
                 cart = []; 
                 localStorage.removeItem("cart");
                 renderCart();
                 fetchProducts(); 
-                
                 alert("Pembayaran Berhasil! Silakan ambil pesanan Anda 👇");
                 resetButton();
             },
@@ -461,18 +475,18 @@
     }
   }
 
-  // Fungsi helper untuk simpan ke DB
+  // Fungsi helper untuk simpan ke DB (Step 1)
   async function simpanOrderKeDatabase(orderId) {
-    // Kita loop cart dan simpan satu-satu
-    // Menggunakan Promise.all agar cepat (parallel)
+    // Kita loop cart dan simpan satu-satu ke endpoint /bayar
     const promises = cart.map(item => {
         return fetch(`${API_BASE_URL}/bayar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             product_id: item.id,
-            user_token: orderId, // ID YANG SAMA
+            user_token: orderId, 
             quantity: item.qty
+            // Kita tidak kirim harga disini, biar worker yang ambil dari DB products
           })
         });
     });
