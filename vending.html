@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vending Machine - AAA</title> 
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* RESET UMUM */
+    body { font-family: 'Poppins', sans-serif; background: #2c3e50; padding: 20px; margin: 0; color: #fff; } /* Saya gelapkan background biar kerasa kayak mesin */
+    
+    h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; color: #f1c40f; } 
+    .subtitle { text-align: center; color: #ecf0f1; margin-bottom: 30px; font-size: 15px; }
+    
+    /* --- PRODUK GRID --- */
+    .produk-container {
+      display: grid;
+      /* Grid tetap sama */
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+      gap: 15px;
+      max-width: 800px; /* Lebar saya kecilkan karena cuma 4 produk */
+      margin: auto;
+      padding-bottom: 50px; 
+    }
+
+    .produk {
+      background: white; padding: 10px; border-radius: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center;
+      transition: transform 0.3s ease; position: relative;
+      display: flex; flex-direction: column; justify-content: space-between;
+      color: #333; /* Kembalikan warna teks produk jadi hitam */
+    }
+    
+    .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
+    .produk img {
+      width: 100%; 
+      aspect-ratio: 1 / 1; 
+      object-fit: cover; 
+      border-radius: 10px; margin-bottom: 10px;
+    }
+
+    .stok-badge {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(0,0,0,0.7); color: white;
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;
+      z-index: 2;
+    }
+
+    .produk h3 { margin: 5px 0; font-size: 16px; line-height: 1.3; min-height: 42px; display: flex; align-items: center; justify-content: center;}
+    .harga { font-weight: 700; margin: 5px 0 10px; color: #d35400; font-size: 15px; }
+    
+    button.btn-beli {
+      background: #e67e22; /* Ubah warna tombol jadi oranye mesin */
+      color: white; border: none;
+      padding: 8px 0; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+      transition: background 0.2s;
+    }
+    button.btn-beli:hover { background: #d35400; }
+    button.btn-beli:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* --- KERANJANG --- */
+    .cart {
+      max-width: 500px;
+      width: 100%;        
+      margin: 40px auto 20px;
+      background: white;
+      padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      color: #333;
+    }
+    
+    .cart-header {
+      display: flex; justify-content: space-between; align-items: center; 
+      margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;
+    }
+    
+    .btn-clear {
+      background: #ff4757; color: white; font-size: 13px; padding: 6px 12px; border-radius: 6px; border:none; cursor: pointer;
+    }
+    .btn-clear:hover { background: #ff6b81; }
+
+    .cart-item {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px;
+    }
+    
+    .item-info strong { font-size: 16px; color: #333; }
+    .item-info small { color: #888; font-size: 13px; }
+
+    .qty { display: flex; align-items: center; gap: 5px; }
+    .qty button { 
+      padding: 0; width: 32px; height: 32px; font-size: 18px; 
+      background: #f1f2f6; color: #333; display: flex; border:none; cursor: pointer;
+      align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .qty button:active { background: #dfe4ea; }
+    .qty input { 
+      width: 40px; text-align: center; border: 1px solid #ddd; 
+      border-radius: 4px; padding: 5px; font-weight: bold;
+    }
+
+    .total { font-weight: 700; margin-top: 20px; font-size: 20px; text-align: right; color: #2d3436; }
+    .btn-checkout { 
+      margin-top: 20px; width: 100%; background: #0984e3; color: white; border: none; cursor: pointer;
+      font-size: 18px; padding: 14px; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2); border-radius: 8px;
+    }
+    .btn-checkout:hover { background: #0076d1; }
+    .btn-checkout:disabled { background: #b2bec3; cursor: not-allowed; }
+    
+    .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #ecf0f1; margin: 40px 0; }
+
+    /* --- FOOTER --- */
+    .footer {
+      text-align: center; margin-top: 40px; padding: 30px 20px; 
+      border-top: 1px solid #444; color: #bdc3c7; font-size: 14px;
+      background-color: #34495e; border-radius: 14px;
+    }
+    
+    .contact-box {
+      margin-bottom: 25px; padding-bottom: 20px;
+      border-bottom: 1px solid #555;
+    }
+    .contact-box h4 { margin: 0 0 15px; color: #fff; font-size: 16px; }
+
+    .sosmed-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none; color: white; font-weight: 600;
+      padding: 10px 20px; border-radius: 50px; margin: 5px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .sosmed-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .sosmed-btn i { font-size: 20px; }
+
+    .btn-wa { background-color: #25D366; }
+    .btn-wa:hover { background-color: #1da851; }
+    .btn-ig { 
+      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); 
+    }
+
+    .footer a.policy-link {
+      color: #95a5a6; text-decoration: none; font-size: 13px; cursor: pointer;
+    }
+    .footer a.policy-link:hover { color: #f1c40f; text-decoration: underline; }
+
+    /* --- MODAL --- */
+    .modal-overlay {
+      display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+      width: 100%; height: 100%; overflow: auto;
+      background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+
+    .modal-content {
+      background-color: #fff; margin: auto; padding: 30px;
+      border-radius: 12px; width: 90%; max-width: 600px;
+      position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      max-height: 80vh; overflow-y: auto; color: #333;
+    }
+
+    .close-modal {
+      color: #aaa; float: right; font-size: 28px; font-weight: bold;
+      cursor: pointer; position: absolute; right: 20px; top: 10px;
+    }
+    .close-modal:hover { color: #000; }
+
+    .modal-body h2 { color: #333; margin-top: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 20px; }
+    .modal-body h3 { font-size: 16px; margin-top: 15px; color: #d35400; }
+    .modal-body p, .modal-body li { color: #555; line-height: 1.6; font-size: 14px; }
+    .modal-body ul { padding-left: 20px; margin-bottom: 15px; }
+    .separator { border: 0; border-top: 1px dashed #ccc; margin: 30px 0; }
+  </style>
+</head>
+
+<body>
+
+<h1 id="pesan-layar">🤖 Vending Machine AAA</h1>
+<p class="subtitle">Silakan pilih salah satu dari 4 menu spesial hari ini</p>
+
+<div class="produk-container" id="produk-list">
+  <div class="loading-msg">⏳ Sedang mengambil kue...</div>
+</div>
+
+<div class="cart">
+  <div class="cart-header">
+    <h2 style="display: flex; align-items: center; gap: 10px; margin: 0;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      Keranjang Vending
+    </h2>
+    <button class="btn-clear" onclick="hapusKeranjang()">🗑️ Reset</button>
+  </div>
+   
+  <div id="cart-items"></div>
+  <div class="total" id="total">Total: Rp 0</div>
+   
+  <button class="btn-checkout" id="btn-bayar" onclick="mulaiPembayaranMidtrans()">Bayar & Ambil Kue</button>
+  <p style="text-align: center; font-size: 13px; color: #888; margin-top: 15px;">
+    *QRIS tersedia
+  </p>
+</div>
+
+<div class="footer">
+  <div class="contact-box">
+    <h4>Hubungi CS:</h4>
+    <a href="https://wa.me/6282328071728" target="_blank" class="sosmed-btn btn-wa">
+      <i class="fa-brands fa-whatsapp"></i> WhatsApp
+    </a>
+    <a href="https://instagram.com/aaa.cakecookies" target="_blank" class="sosmed-btn btn-ig">
+      <i class="fa-brands fa-instagram"></i> Instagram
+    </a>
+  </div>
+  &copy; 2025 Vending Machine AAA.<br>
+  <a onclick="openRefundModal()" class="policy-link">Syarat & Ketentuan</a>
+</div>
+
+<div id="refundModal" class="modal-overlay">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeRefundModal()">&times;</span>
+    <div class="modal-body">
+      <h2>Kebijakan Vending Machine</h2>
+      <p>Sama seperti kebijakan toko utama.</p>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript"
+  src="https://app.midtrans.com/snap/snap.js"
+  data-client-key="Mid-client-vkVSkv_rBJsbJj7B"> 
+</script>
+
+<script>
+  const API_BASE_URL = "https://vending-machine-server.fahmyainun.workers.dev"; 
+
+  const productImages = {
+    "p1": "brownieskukus.jpg",
+    "p2": "boluketanhitam.jpg",
+    "p3": "cakecookies.jpg",
+    "p4": "bananarolls.jpg", 
+    "p5": "fudgybrownies.jpg",
+    "p6": "kastengels.jpg",
+    "p7": "bolugulungkacangkejucoklat.jpg",
+    "p8": "nastar.jpg",
+    "p9": "bolugulung.jpg",
+    "p10": "1000.jpg",
+    "p11": "Kue Sus.jpg",
+    "p12": "Donat Kentang.jpg",
+    "p13": "Roti Labu Kuning.jpg",
+    "p14": "Donat Labu Kuning.jpg", 
+  };
+
+  let cart = JSON.parse(localStorage.getItem("cart-vending")) || []; // Ganti key localStorage biar gak bentrok sama web utama
+  let productsData = []; 
+
+  // 🔥🔥 SETTING PRODUK KHUSUS VENDING DI SINI 🔥🔥
+  // Masukkan ID produk yang mau ditampilkan di vending machine (max 4)
+  const vendingProductIDs = ["p11", "p12", "p13", "p14"]; 
+
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchProducts();
+    renderCart();
+  });
+
+  const modal = document.getElementById("refundModal");
+  function openRefundModal() { modal.style.display = "flex"; }
+  function closeRefundModal() { modal.style.display = "none"; }
+  window.onclick = function(event) { if (event.target == modal) modal.style.display = "none"; }
+
+  // --- FUNGSI AMBIL DATA (DIMODIFIKASI UNTUK VENDING) ---
+  async function fetchProducts() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/products`);
+      if (!res.ok) throw new Error("Gagal ambil data");
+      
+      const allProducts = await res.json();
+
+      // 🔥🔥 DISINI LETAK PENYARINGANNYA 🔥🔥
+      // Kita hanya ambil produk yang ID-nya ada di daftar 'vendingProductIDs'
+      productsData = allProducts.filter(item => vendingProductIDs.includes(item.id));
+
+      if (productsData.length === 0) {
+          document.getElementById("produk-list").innerHTML = `<p style="text-align:center;">Produk vending sedang kosong.</p>`;
+          return;
+      }
+
+      renderProducts(productsData);
+    } catch (err) {
+      document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat vending. Cek koneksi.</p>`;
+    }
+  }
+
+  function renderProducts(products) {
+    const container = document.getElementById("produk-list");
+    container.innerHTML = "";
+    products.forEach(p => {
+      const imgUrl = productImages[p.id] || productImages["default"];
+      const isHabis = p.stock <= 0;
+      container.innerHTML += `
+        <div class="produk">
+          <div class="stok-badge">Stok: ${p.stock}</div>
+          <img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/150'">
+          <h3>${p.name}</h3>
+          <div class="harga">Rp ${p.price.toLocaleString()}</div>
+          <button class="btn-beli" onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.stock})" ${isHabis ? "disabled" : ""}>
+            ${isHabis ? "Habis" : "👇 Pilih Ini"}
+          </button>
+        </div>
+      `;
+    });
+  }
+
+  // --- KERANJANG & PEMBAYARAN (SAMA PERSIS LOGIKANYA) ---
+  function addToCart(id, nama, harga, maxStock) {
+    const item = cart.find(p => p.id === id);
+    if (item) {
+      if (item.qty < maxStock) item.qty++;
+      else return alert("Stok maksimal di mesin tercapai!");
+    } else {
+      cart.push({ id, nama, harga, qty: 1, maxStock });
+    }
+    saveCart(); renderCart();
+  }
+
+  function changeQty(id, delta) {
+    const item = cart.find(p => p.id === id);
+    if (!item) return;
+    const newQty = item.qty + delta;
+    if (delta > 0 && newQty > item.maxStock) return alert("Stok mentok!");
+    item.qty = newQty;
+    if (item.qty <= 0) cart = cart.filter(p => p.id !== id);
+    saveCart(); renderCart();
+  }
+
+  function hapusKeranjang() {
+    if(confirm("Reset pilihan?")) {
+        cart = [];
+        localStorage.removeItem("cart-vending");
+        renderCart();
+    }
+  }
+
+  function renderCart() {
+    const el = document.getElementById("cart-items");
+    el.innerHTML = "";
+    if (cart.length === 0) {
+        el.innerHTML = "<p style='text-align:center; color:#999; padding:20px;'>Belum ada item dipilih.</p>";
+        document.getElementById("total").innerText = "Total: Rp 0";
+        return;
+    }
+    let total = 0;
+    cart.forEach(i => {
+      total += i.harga * i.qty;
+      el.innerHTML += `
+        <div class="cart-item">
+          <div class="item-info">
+            <strong>${i.nama}</strong><br>
+            <small>@ Rp ${i.harga.toLocaleString()}</small>
+          </div>
+          <div class="qty">
+            <button onclick="changeQty('${i.id}', -1)">−</button>
+            <input type="text" value="${i.qty}" readonly>
+            <button onclick="changeQty('${i.id}', 1)">+</button>
+          </div>
+        </div>`;
+    });
+    document.getElementById("total").innerText = "Total: Rp " + total.toLocaleString();
+  }
+
+  function saveCart() { localStorage.setItem("cart-vending", JSON.stringify(cart)); }
+
+  // --- INTEGRASI WORKER SERVER & MIDTRANS (SAMA PERSIS) ---
+  async function mulaiPembayaranMidtrans() {
+    if (!cart.length) return alert("Pilih produk dulu!");
+    let estimasiTotal = 0;
+    cart.forEach(item => estimasiTotal += item.harga * item.qty);
+    const btn = document.getElementById("btn-bayar");
+    btn.innerHTML = "⏳ Memproses...";
+    btn.disabled = true;
+    const myOrderId = "VEND-" + Date.now(); // Ubah prefix jadi VEND biar ketahuan order dari vending
+    const resetButton = () => {
+        btn.innerHTML = "Bayar & Ambil Kue";
+        btn.disabled = false;
+    };
+    try {
+        await simpanOrderKeDatabase(myOrderId);
+        const itemsToSend = cart.map(item => ({
+            id: item.id,
+            quantity: item.qty
+        }));
+        btn.innerHTML = "⏳ Menghubungi Bank...";
+        const response = await fetch(`${API_BASE_URL}/api/get-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                order_id: myOrderId,
+                items: itemsToSend, 
+                product_name: "Vending AAA"
+            }) 
+        });
+        const data = await response.json();
+        if (data.error) { alert("Error: " + data.error); resetButton(); return; }
+        if (!data.token) { alert("Gagal koneksi Token."); resetButton(); return; }
+
+        window.snap.pay(data.token, {
+            onSuccess: function(result){
+                console.log("Sukses!", result);
+                const judul = document.getElementById("pesan-layar");
+                if (judul) {
+                    judul.innerText = "✅ PEMBAYARAN SUKSES! KELUARKAN BARANG...";
+                    judul.style.color = "#2ecc71"; 
+                }
+                cart = []; 
+                localStorage.removeItem("cart-vending");
+                renderCart();
+                fetchProducts(); 
+                alert("Berhasil! Silakan ambil produk di tray bawah 👇");
+                resetButton();
+            },
+            onPending: function(result){ alert("Menunggu pembayaran..."); resetButton(); },
+            onError: function(result){ alert("Gagal!"); resetButton(); },
+            onClose: function(){ resetButton(); }
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Gangguan sinyal vending machine.");
+        resetButton();
+    }
+  }
+
+  async function simpanOrderKeDatabase(orderId) {
+    const promises = cart.map(item => {
+        return fetch(`${API_BASE_URL}/bayar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: item.id,
+            user_token: orderId, 
+            quantity: item.qty
+          })
+        });
+    });
+    await Promise.all(promises);
+  }
+</script>
+
+</body>
+</html>
