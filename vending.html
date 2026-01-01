@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vending Machine - AAA</title> 
-  
+   
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
     /* RESET UMUM */
-    body { font-family: 'Poppins', sans-serif; background: #2c3e50; padding: 20px; margin: 0; color: #fff; } /* Saya gelapkan background biar kerasa kayak mesin */
+    body { font-family: 'Poppins', sans-serif; background: #2c3e50; padding: 20px; margin: 0; color: #fff; }
     
     h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; color: #f1c40f; } 
     .subtitle { text-align: center; color: #ecf0f1; margin-bottom: 30px; font-size: 15px; }
@@ -18,10 +18,9 @@
     /* --- PRODUK GRID --- */
     .produk-container {
       display: grid;
-      /* Grid tetap sama */
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
       gap: 15px;
-      max-width: 800px; /* Lebar saya kecilkan karena cuma 4 produk */
+      max-width: 800px;
       margin: auto;
       padding-bottom: 50px; 
     }
@@ -31,7 +30,7 @@
       box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center;
       transition: transform 0.3s ease; position: relative;
       display: flex; flex-direction: column; justify-content: space-between;
-      color: #333; /* Kembalikan warna teks produk jadi hitam */
+      color: #333;
     }
     
     .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
@@ -53,63 +52,18 @@
     .produk h3 { margin: 5px 0; font-size: 16px; line-height: 1.3; min-height: 42px; display: flex; align-items: center; justify-content: center;}
     .harga { font-weight: 700; margin: 5px 0 10px; color: #d35400; font-size: 15px; }
     
+    /* Tombol Beli Langsung */
     button.btn-beli {
-      background: #e67e22; /* Ubah warna tombol jadi oranye mesin */
+      background: #e67e22; 
       color: white; border: none;
-      padding: 8px 0; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
-      transition: background 0.2s;
+      padding: 12px 0; /* Padding diperbesar sedikit biar enak ditekan */
+      width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;
+      transition: background 0.2s, transform 0.1s;
     }
     button.btn-beli:hover { background: #d35400; }
-    button.btn-beli:disabled { background: #ccc; cursor: not-allowed; }
+    button.btn-beli:active { transform: scale(0.98); }
+    button.btn-beli:disabled { background: #ccc; cursor: not-allowed; transform: none; }
 
-    /* --- KERANJANG --- */
-    .cart {
-      max-width: 500px;
-      width: 100%;        
-      margin: 40px auto 20px;
-      background: white;
-      padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      color: #333;
-    }
-    
-    .cart-header {
-      display: flex; justify-content: space-between; align-items: center; 
-      margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;
-    }
-    
-    .btn-clear {
-      background: #ff4757; color: white; font-size: 13px; padding: 6px 12px; border-radius: 6px; border:none; cursor: pointer;
-    }
-    .btn-clear:hover { background: #ff6b81; }
-
-    .cart-item {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px;
-    }
-    
-    .item-info strong { font-size: 16px; color: #333; }
-    .item-info small { color: #888; font-size: 13px; }
-
-    .qty { display: flex; align-items: center; gap: 5px; }
-    .qty button { 
-      padding: 0; width: 32px; height: 32px; font-size: 18px; 
-      background: #f1f2f6; color: #333; display: flex; border:none; cursor: pointer;
-      align-items: center; justify-content: center; border-radius: 50%;
-    }
-    .qty button:active { background: #dfe4ea; }
-    .qty input { 
-      width: 40px; text-align: center; border: 1px solid #ddd; 
-      border-radius: 4px; padding: 5px; font-weight: bold;
-    }
-
-    .total { font-weight: 700; margin-top: 20px; font-size: 20px; text-align: right; color: #2d3436; }
-    .btn-checkout { 
-      margin-top: 20px; width: 100%; background: #0984e3; color: white; border: none; cursor: pointer;
-      font-size: 18px; padding: 14px; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2); border-radius: 8px;
-    }
-    .btn-checkout:hover { background: #0076d1; }
-    .btn-checkout:disabled { background: #b2bec3; cursor: not-allowed; }
-    
     .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #ecf0f1; margin: 40px 0; }
 
     /* --- FOOTER --- */
@@ -170,52 +124,24 @@
     .close-modal:hover { color: #000; }
 
     .modal-body h2 { color: #333; margin-top: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 20px; }
-    .modal-body h3 { font-size: 16px; margin-top: 15px; color: #d35400; }
-    .modal-body p, .modal-body li { color: #555; line-height: 1.6; font-size: 14px; }
-    .modal-body ul { padding-left: 20px; margin-bottom: 15px; }
-    .separator { border: 0; border-top: 1px dashed #ccc; margin: 30px 0; }
+    .modal-body p { color: #555; line-height: 1.6; font-size: 14px; }
   </style>
 </head>
 
 <body>
 
 <h1 id="pesan-layar">🤖 Vending Machine AAA</h1>
-<p class="subtitle">Silakan pilih salah satu dari 4 menu spesial hari ini</p>
+<p class="subtitle">Sentuh tombol "Beli" untuk pembayaran instan (QRIS)</p>
 
 <div class="produk-container" id="produk-list">
   <div class="loading-msg">⏳ Sedang mengambil kue...</div>
 </div>
 
-<div class="cart">
-  <div class="cart-header">
-    <h2 style="display: flex; align-items: center; gap: 10px; margin: 0;">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="21" r="1"></circle>
-        <circle cx="20" cy="21" r="1"></circle>
-        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-      </svg>
-      Keranjang Vending
-    </h2>
-    <button class="btn-clear" onclick="hapusKeranjang()">🗑️ Reset</button>
-  </div>
-   
-  <div id="cart-items"></div>
-  <div class="total" id="total">Total: Rp 0</div>
-   
-  <button class="btn-checkout" id="btn-bayar" onclick="mulaiPembayaranMidtrans()">Bayar & Ambil Kue</button>
-  <p style="text-align: center; font-size: 13px; color: #888; margin-top: 15px;">
-    *QRIS tersedia
-  </p>
-</div>
-
 <div class="footer">
   <div class="contact-box">
-    <h4>Hubungi CS:</h4>
+    <h4>Butuh Bantuan?</h4>
     <a href="https://wa.me/6282328071728" target="_blank" class="sosmed-btn btn-wa">
       <i class="fa-brands fa-whatsapp"></i> WhatsApp
-    </a>
-    <a href="https://instagram.com/aaa.cakecookies" target="_blank" class="sosmed-btn btn-ig">
-      <i class="fa-brands fa-instagram"></i> Instagram
     </a>
   </div>
   &copy; 2025 Vending Machine AAA.<br>
@@ -226,8 +152,8 @@
   <div class="modal-content">
     <span class="close-modal" onclick="closeRefundModal()">&times;</span>
     <div class="modal-body">
-      <h2>Kebijakan Vending Machine</h2>
-      <p>Sama seperti kebijakan toko utama.</p>
+      <h2>Info Vending</h2>
+      <p>Pembayaran akan diproses langsung per item. Pastikan saldo e-wallet Anda cukup.</p>
     </div>
   </div>
 </div>
@@ -241,32 +167,18 @@
   const API_BASE_URL = "https://vending-machine-server.fahmyainun.workers.dev"; 
 
   const productImages = {
-    "p1": "brownieskukus.jpg",
-    "p2": "boluketanhitam.jpg",
-    "p3": "cakecookies.jpg",
-    "p4": "bananarolls.jpg", 
-    "p5": "fudgybrownies.jpg",
-    "p6": "kastengels.jpg",
-    "p7": "bolugulungkacangkejucoklat.jpg",
-    "p8": "nastar.jpg",
-    "p9": "bolugulung.jpg",
-    "p10": "1000.jpg",
     "p11": "Kue Sus.jpg",
     "p12": "Donat Kentang.jpg",
     "p13": "Roti Labu Kuning.jpg",
     "p14": "Donat Labu Kuning.jpg", 
+    "default": "https://via.placeholder.com/150?text=Vending+AAA"
   };
 
-  let cart = JSON.parse(localStorage.getItem("cart-vending")) || []; // Ganti key localStorage biar gak bentrok sama web utama
-  let productsData = []; 
-
-  // 🔥🔥 SETTING PRODUK KHUSUS VENDING DI SINI 🔥🔥
-  // Masukkan ID produk yang mau ditampilkan di vending machine (max 4)
+  // 🔥🔥 SETTING ID PRODUK VENDING 🔥🔥
   const vendingProductIDs = ["p11", "p12", "p13", "p14"]; 
 
   document.addEventListener("DOMContentLoaded", () => {
     fetchProducts();
-    renderCart();
   });
 
   const modal = document.getElementById("refundModal");
@@ -274,180 +186,126 @@
   function closeRefundModal() { modal.style.display = "none"; }
   window.onclick = function(event) { if (event.target == modal) modal.style.display = "none"; }
 
-  // --- FUNGSI AMBIL DATA (DIMODIFIKASI UNTUK VENDING) ---
+  // --- AMBIL DATA ---
   async function fetchProducts() {
     try {
       const res = await fetch(`${API_BASE_URL}/products`);
       if (!res.ok) throw new Error("Gagal ambil data");
       
       const allProducts = await res.json();
-
-      // 🔥🔥 DISINI LETAK PENYARINGANNYA 🔥🔥
-      // Kita hanya ambil produk yang ID-nya ada di daftar 'vendingProductIDs'
-      productsData = allProducts.filter(item => vendingProductIDs.includes(item.id));
+      const productsData = allProducts.filter(item => vendingProductIDs.includes(item.id));
 
       if (productsData.length === 0) {
           document.getElementById("produk-list").innerHTML = `<p style="text-align:center;">Produk vending sedang kosong.</p>`;
           return;
       }
-
       renderProducts(productsData);
     } catch (err) {
       document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat vending. Cek koneksi.</p>`;
     }
   }
 
+  // --- RENDER PRODUK (TOMBOL BELI LANGSUNG) ---
   function renderProducts(products) {
     const container = document.getElementById("produk-list");
     container.innerHTML = "";
+    
     products.forEach(p => {
       const imgUrl = productImages[p.id] || productImages["default"];
       const isHabis = p.stock <= 0;
+      
       container.innerHTML += `
         <div class="produk">
           <div class="stok-badge">Stok: ${p.stock}</div>
-          <img src="${imgUrl}" onerror="this.src='https://via.placeholder.com/150'">
+          <img src="${imgUrl}" onerror="this.src='${productImages.default}'">
           <h3>${p.name}</h3>
           <div class="harga">Rp ${p.price.toLocaleString()}</div>
-          <button class="btn-beli" onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.stock})" ${isHabis ? "disabled" : ""}>
-            ${isHabis ? "Habis" : "👇 Pilih Ini"}
+          
+          <button id="btn-${p.id}" class="btn-beli" 
+            onclick="beliLangsung('${p.id}', '${p.name}', ${p.price})" 
+            ${isHabis ? "disabled" : ""}>
+            ${isHabis ? "Habis" : "🛒 Beli"}
           </button>
         </div>
       `;
     });
   }
 
-  // --- KERANJANG & PEMBAYARAN (SAMA PERSIS LOGIKANYA) ---
-  function addToCart(id, nama, harga, maxStock) {
-    const item = cart.find(p => p.id === id);
-    if (item) {
-      if (item.qty < maxStock) item.qty++;
-      else return alert("Stok maksimal di mesin tercapai!");
-    } else {
-      cart.push({ id, nama, harga, qty: 1, maxStock });
-    }
-    saveCart(); renderCart();
-  }
-
-  function changeQty(id, delta) {
-    const item = cart.find(p => p.id === id);
-    if (!item) return;
-    const newQty = item.qty + delta;
-    if (delta > 0 && newQty > item.maxStock) return alert("Stok mentok!");
-    item.qty = newQty;
-    if (item.qty <= 0) cart = cart.filter(p => p.id !== id);
-    saveCart(); renderCart();
-  }
-
-  function hapusKeranjang() {
-    if(confirm("Reset pilihan?")) {
-        cart = [];
-        localStorage.removeItem("cart-vending");
-        renderCart();
-    }
-  }
-
-  function renderCart() {
-    const el = document.getElementById("cart-items");
-    el.innerHTML = "";
-    if (cart.length === 0) {
-        el.innerHTML = "<p style='text-align:center; color:#999; padding:20px;'>Belum ada item dipilih.</p>";
-        document.getElementById("total").innerText = "Total: Rp 0";
-        return;
-    }
-    let total = 0;
-    cart.forEach(i => {
-      total += i.harga * i.qty;
-      el.innerHTML += `
-        <div class="cart-item">
-          <div class="item-info">
-            <strong>${i.nama}</strong><br>
-            <small>@ Rp ${i.harga.toLocaleString()}</small>
-          </div>
-          <div class="qty">
-            <button onclick="changeQty('${i.id}', -1)">−</button>
-            <input type="text" value="${i.qty}" readonly>
-            <button onclick="changeQty('${i.id}', 1)">+</button>
-          </div>
-        </div>`;
-    });
-    document.getElementById("total").innerText = "Total: Rp " + total.toLocaleString();
-  }
-
-  function saveCart() { localStorage.setItem("cart-vending", JSON.stringify(cart)); }
-
-  // --- INTEGRASI WORKER SERVER & MIDTRANS (SAMA PERSIS) ---
-  async function mulaiPembayaranMidtrans() {
-    if (!cart.length) return alert("Pilih produk dulu!");
-    let estimasiTotal = 0;
-    cart.forEach(item => estimasiTotal += item.harga * item.qty);
-    const btn = document.getElementById("btn-bayar");
-    btn.innerHTML = "⏳ Memproses...";
+  // --- LOGIKA BELI LANGSUNG (SINGLE ITEM) ---
+  async function beliLangsung(id, nama, harga) {
+    // 1. Matikan tombol biar gak dipencet 2x
+    const btn = document.getElementById(`btn-${id}`);
+    const originalText = btn.innerText;
+    btn.innerHTML = "⏳ Proses...";
     btn.disabled = true;
-    const myOrderId = "VEND-" + Date.now(); // Ubah prefix jadi VEND biar ketahuan order dari vending
+
+    // Fungsi helper untuk mengembalikan tombol ke semula kalau batal/error
     const resetButton = () => {
-        btn.innerHTML = "Bayar & Ambil Kue";
+        btn.innerHTML = originalText;
         btn.disabled = false;
     };
+
+    const myOrderId = "VEND-" + Date.now(); // Order ID Unik
+
     try {
-        await simpanOrderKeDatabase(myOrderId);
-        const itemsToSend = cart.map(item => ({
-            id: item.id,
-            quantity: item.qty
-        }));
-        btn.innerHTML = "⏳ Menghubungi Bank...";
+        // 2. Simpan Order ke Database (Qty otomatis 1)
+        await fetch(`${API_BASE_URL}/bayar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: id,
+            user_token: myOrderId, 
+            quantity: 1 // FIX QTY = 1
+          })
+        });
+
+        // 3. Minta Token Midtrans (Qty otomatis 1)
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 order_id: myOrderId,
-                items: itemsToSend, 
-                product_name: "Vending AAA"
+                items: [{ id: id, quantity: 1 }], // FIX QTY = 1
+                product_name: "Vending: " + nama
             }) 
         });
+
         const data = await response.json();
+        
         if (data.error) { alert("Error: " + data.error); resetButton(); return; }
         if (!data.token) { alert("Gagal koneksi Token."); resetButton(); return; }
 
+        // 4. Munculkan Popup Bayar
         window.snap.pay(data.token, {
             onSuccess: function(result){
                 console.log("Sukses!", result);
-                const judul = document.getElementById("pesan-layar");
-                if (judul) {
-                    judul.innerText = "✅ PEMBAYARAN SUKSES! KELUARKAN BARANG...";
-                    judul.style.color = "#2ecc71"; 
-                }
-                cart = []; 
-                localStorage.removeItem("cart-vending");
-                renderCart();
+                document.getElementById("pesan-layar").innerText = "✅ SILAKAN AMBIL: " + nama.toUpperCase();
+                document.getElementById("pesan-layar").style.color = "#2ecc71";
+                
+                alert("Pembayaran Berhasil! Silakan ambil kue Anda 👇");
+                
+                // Refresh data stok setelah beli sukses
                 fetchProducts(); 
-                alert("Berhasil! Silakan ambil produk di tray bawah 👇");
+            },
+            onPending: function(result){
+                alert("Menunggu pembayaran...");
                 resetButton();
             },
-            onPending: function(result){ alert("Menunggu pembayaran..."); resetButton(); },
-            onError: function(result){ alert("Gagal!"); resetButton(); },
-            onClose: function(){ resetButton(); }
+            onError: function(result){
+                alert("Pembayaran Gagal!");
+                resetButton();
+            },
+            onClose: function(){
+                // Kalau user tutup popup tanpa bayar
+                resetButton(); 
+            }
         });
+
     } catch (error) {
         console.error("Error:", error);
-        alert("Gangguan sinyal vending machine.");
+        alert("Gangguan koneksi vending.");
         resetButton();
     }
-  }
-
-  async function simpanOrderKeDatabase(orderId) {
-    const promises = cart.map(item => {
-        return fetch(`${API_BASE_URL}/bayar`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product_id: item.id,
-            user_token: orderId, 
-            quantity: item.qty
-          })
-        });
-    });
-    await Promise.all(promises);
   }
 </script>
 
