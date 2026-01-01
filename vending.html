@@ -187,7 +187,7 @@
   async function fetchProducts() {
     try {
       const res = await fetch(`${API_BASE_URL}/products`);
-      if (!res.ok) throw new Error("Gagal ambil data");
+      if (!res.ok) throw new Error("Gagal ambil data: " + res.status);
       
       const allProducts = await res.json();
       const productsData = allProducts.filter(item => vendingProductIDs.includes(item.id));
@@ -198,7 +198,8 @@
       }
       renderProducts(productsData);
     } catch (err) {
-      document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat vending. Cek koneksi.</p>`;
+      console.error(err);
+      document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat: ${err.message}</p>`;
     }
   }
 
@@ -211,27 +212,45 @@
       const imgUrl = productImages[p.id] || productImages["default"];
       const isHabis = p.stock <= 0;
       
-      container.innerHTML += `
-        <div class="produk">
+      // SAYA PERBAIKI CARA MANGGIL KLIKNYA SUPAYA TIDAK ERROR
+      // Menggunakan pembungkus div, bukan langsung di string
+      const div = document.createElement('div');
+      div.className = 'produk';
+      div.innerHTML = `
           <div class="stok-badge">Stok: ${p.stock}</div>
           <img src="${imgUrl}" onerror="this.src='${productImages.default}'">
           <h3>${p.name}</h3>
           <div class="harga">Rp ${p.price.toLocaleString()}</div>
           
-          <button id="btn-${p.id}" class="btn-beli" 
-            onclick="beliLangsung('${p.id}', '${p.name}', ${p.price}')" 
-            ${isHabis ? "disabled" : ""}>
+          <button id="btn-${p.id}" class="btn-beli" ${isHabis ? "disabled" : ""}>
             ${isHabis ? "Habis" : "🛒 Beli"}
           </button>
-        </div>
       `;
+
+      // Event listener dipasang manual biar aman dari error kutip
+      if (!isHabis) {
+          div.querySelector('button').onclick = function() {
+              beliLangsung(p.id, p.name, p.price);
+          };
+      }
+
+      container.appendChild(div);
     });
   }
 
-  // --- LOGIKA BELI LANGSUNG (PERBAIKAN: STOK KURANG SETELAH BAYAR) ---
+  // --- LOGIKA BELI LANGSUNG (ANTI ERROR) ---
   async function beliLangsung(id, nama, harga) {
-    // 1. Matikan tombol biar gak dipencet 2x
-    const btn = document.getElementById(`btn-${id}`);
+    // 0. Cek Midtrans dulu
+    if (typeof window.snap === 'undefined') {
+        alert("Sistem pembayaran belum siap (Loading...). Tunggu 3 detik lalu coba lagi.");
+        return;
+    }
+
+    // 1. Matikan tombol
+    const btnId = "btn-" + id; // Cara seleksi ID yang paling aman
+    const btn = document.getElementById(btnId);
+    if (!btn) return; // Jaga-jaga kalau elemen ga ketemu
+
     const originalText = btn.innerText;
     btn.innerHTML = "⏳ Menghubungi Bank...";
     btn.disabled = true;
@@ -244,7 +263,7 @@
     const myOrderId = "VEND-" + Date.now(); 
 
     try {
-        // [REVISI] Langkah 2: Minta Token dulu (JANGAN kurangi stok dulu)
+        // 2. Minta Token
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -255,19 +274,23 @@
             }) 
         });
 
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error("Server Error: " + errText);
+        }
+
         const data = await response.json();
         
-        if (data.error) { alert("Error: " + data.error); resetButton(); return; }
-        if (!data.token) { alert("Gagal koneksi Token."); resetButton(); return; }
+        if (data.error) { alert("Error dari Server: " + data.error); resetButton(); return; }
+        if (!data.token) { alert("Gagal mendapatkan Token Pembayaran."); resetButton(); return; }
 
-        // [REVISI] Langkah 3: Munculkan Popup Bayar
+        // 3. Munculkan Popup Bayar
         window.snap.pay(data.token, {
             onSuccess: async function(result){
                 console.log("Sukses Midtrans!", result);
-                btn.innerHTML = "🔄 Memproses Mesin...";
+                btn.innerHTML = "🔄 Memproses...";
                 
-                // [REVISI] Langkah 4: BARU PANGGIL /BAYAR DISINI
-                // Ini akan: Mengurangi stok di DB & Memicu Motor Vending
+                // 4. Update Database & Putar Mesin
                 try {
                   await fetch(`${API_BASE_URL}/bayar`, {
                     method: "POST",
@@ -284,12 +307,11 @@
                   document.getElementById("pesan-layar").style.color = "#2ecc71";
                   alert("Pembayaran Berhasil! Silakan ambil kue Anda 👇");
                   
-                  // Refresh data stok
                   fetchProducts(); 
                   resetButton();
 
                 } catch (errDb) {
-                  alert("Pembayaran masuk, tapi gagal update database. Foto bukti bayar!");
+                  alert("Pembayaran masuk, tapi database error. Mohon foto bukti bayar.");
                   console.error(errDb);
                   resetButton();
                 }
@@ -308,14 +330,13 @@
         });
 
     } catch (error) {
-        console.error("Error:", error);
-        alert("Gangguan koneksi vending.");
+        console.error("Error Beli:", error);
+        alert("Gagal koneksi: " + error.message);
         resetButton();
     }
   }
 
-  // --- LOGIKA TIMER IDLE (AUTO RESET KE LAYAR IKLAN) ---
-  // Supaya kalau ditinggal orang, layar balik ke video iklan
+  // --- LOGIKA TIMER IDLE ---
   let idleTime = 0;
   
   const resetTimer = () => { idleTime = 0; };
@@ -326,11 +347,10 @@
 
   setInterval(() => {
     idleTime++;
-    // Kalau diam 2 menit, balik ke vending.html
     if (idleTime >= 2) { 
        window.location.href = "vending.html"; 
     }
-  }, 60000); // Cek tiap 1 menit
+  }, 60000); 
 </script>
 
 </body>
