@@ -310,29 +310,34 @@
     }
   }
 
-  // --- FUNGSI RENDER PRODUK (DIPERBAIKI) ---
+  // --- FUNGSI RENDER PRODUK (SUDAH DIPERBAIKI DENGAN HIDDEN LOGIC) ---
   function renderProducts(products) {
     const container = document.getElementById("produk-list");
     container.innerHTML = "";
     
-    // Kita gunakan .map dan .join agar performa lebih baik dan struktur HTML rapi
-    const htmlString = products.map(p => {
-      // Ambil URL gambar, atau pakai default jika ID tidak ada di map
-      const imgUrl = productImages[p.id] || productImages["default"];
-      const isHabis = p.stock <= 0;
-      const hargaFmt = p.price.toLocaleString('id-ID'); // Format rupiah
-      
-      return `
-        <div class="produk">
-          <div class="stok-badge">Stok: ${p.stock}</div>
-          <img src="${imgUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${productImages.default}'">
-          <h3>${p.name}</h3>
-          <div class="harga">Rp ${hargaFmt}</div>
-          <button class="btn-beli" onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.stock})" ${isHabis ? "disabled" : ""}>
-            ${isHabis ? "Habis" : "🛒 Beli"}
-          </button>
-        </div>
-      `;
+    // --- DAFTAR PRODUK YANG DISEMBUYIKAN DARI TOKO UTAMA ---
+    const hiddenProducts = ["p11", "p12"]; 
+
+    // Kita filter dulu (buang yg hidden), baru di-Map (render ke HTML)
+    const htmlString = products
+      .filter(p => !hiddenProducts.includes(p.id)) // <--- Logika filter disini
+      .map(p => {
+        // Ambil URL gambar, atau pakai default jika ID tidak ada di map
+        const imgUrl = productImages[p.id] || productImages["default"];
+        const isHabis = p.stock <= 0;
+        const hargaFmt = p.price.toLocaleString('id-ID'); // Format rupiah
+        
+        return `
+          <div class="produk">
+            <div class="stok-badge">Stok: ${p.stock}</div>
+            <img src="${imgUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${productImages.default}'">
+            <h3>${p.name}</h3>
+            <div class="harga">Rp ${hargaFmt}</div>
+            <button class="btn-beli" onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.stock})" ${isHabis ? "disabled" : ""}>
+              ${isHabis ? "Habis" : "🛒 Beli"}
+            </button>
+          </div>
+        `;
     }).join('');
 
     container.innerHTML = htmlString;
