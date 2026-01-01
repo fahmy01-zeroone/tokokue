@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vending Machine - AAA</title> 
+  <title>Vending Machine - AAA</title>  
    
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -56,7 +56,7 @@
     button.btn-beli {
       background: #e67e22; 
       color: white; border: none;
-      padding: 12px 0; /* Padding diperbesar sedikit biar enak ditekan */
+      padding: 12px 0;
       width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;
       transition: background 0.2s, transform 0.1s;
     }
@@ -93,10 +93,7 @@
 
     .btn-wa { background-color: #25D366; }
     .btn-wa:hover { background-color: #1da851; }
-    .btn-ig { 
-      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); 
-    }
-
+    
     .footer a.policy-link {
       color: #95a5a6; text-decoration: none; font-size: 13px; cursor: pointer;
     }
@@ -205,7 +202,7 @@
     }
   }
 
-  // --- RENDER PRODUK (TOMBOL BELI LANGSUNG) ---
+  // --- RENDER PRODUK ---
   function renderProducts(products) {
     const container = document.getElementById("produk-list");
     container.innerHTML = "";
@@ -222,7 +219,7 @@
           <div class="harga">Rp ${p.price.toLocaleString()}</div>
           
           <button id="btn-${p.id}" class="btn-beli" 
-            onclick="beliLangsung('${p.id}', '${p.name}', ${p.price})" 
+            onclick="beliLangsung('${p.id}', '${p.name}', ${p.price}')" 
             ${isHabis ? "disabled" : ""}>
             ${isHabis ? "Habis" : "🛒 Beli"}
           </button>
@@ -231,41 +228,29 @@
     });
   }
 
-  // --- LOGIKA BELI LANGSUNG (SINGLE ITEM) ---
+  // --- LOGIKA BELI LANGSUNG (PERBAIKAN: STOK KURANG SETELAH BAYAR) ---
   async function beliLangsung(id, nama, harga) {
     // 1. Matikan tombol biar gak dipencet 2x
     const btn = document.getElementById(`btn-${id}`);
     const originalText = btn.innerText;
-    btn.innerHTML = "⏳ Proses...";
+    btn.innerHTML = "⏳ Menghubungi Bank...";
     btn.disabled = true;
 
-    // Fungsi helper untuk mengembalikan tombol ke semula kalau batal/error
     const resetButton = () => {
         btn.innerHTML = originalText;
         btn.disabled = false;
     };
 
-    const myOrderId = "VEND-" + Date.now(); // Order ID Unik
+    const myOrderId = "VEND-" + Date.now(); 
 
     try {
-        // 2. Simpan Order ke Database (Qty otomatis 1)
-        await fetch(`${API_BASE_URL}/bayar`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product_id: id,
-            user_token: myOrderId, 
-            quantity: 1 // FIX QTY = 1
-          })
-        });
-
-        // 3. Minta Token Midtrans (Qty otomatis 1)
+        // [REVISI] Langkah 2: Minta Token dulu (JANGAN kurangi stok dulu)
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 order_id: myOrderId,
-                items: [{ id: id, quantity: 1 }], // FIX QTY = 1
+                items: [{ id: id, quantity: 1 }], 
                 product_name: "Vending: " + nama
             }) 
         });
@@ -275,28 +260,49 @@
         if (data.error) { alert("Error: " + data.error); resetButton(); return; }
         if (!data.token) { alert("Gagal koneksi Token."); resetButton(); return; }
 
-        // 4. Munculkan Popup Bayar
+        // [REVISI] Langkah 3: Munculkan Popup Bayar
         window.snap.pay(data.token, {
-            onSuccess: function(result){
-                console.log("Sukses!", result);
-                document.getElementById("pesan-layar").innerText = "✅ SILAKAN AMBIL: " + nama.toUpperCase();
-                document.getElementById("pesan-layar").style.color = "#2ecc71";
+            onSuccess: async function(result){
+                console.log("Sukses Midtrans!", result);
+                btn.innerHTML = "🔄 Memproses Mesin...";
                 
-                alert("Pembayaran Berhasil! Silakan ambil kue Anda 👇");
-                
-                // Refresh data stok setelah beli sukses
-                fetchProducts(); 
+                // [REVISI] Langkah 4: BARU PANGGIL /BAYAR DISINI
+                // Ini akan: Mengurangi stok di DB & Memicu Motor Vending
+                try {
+                  await fetch(`${API_BASE_URL}/bayar`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      product_id: id,
+                      user_token: myOrderId, 
+                      quantity: 1 
+                    })
+                  });
+
+                  // UI Sukses
+                  document.getElementById("pesan-layar").innerText = "✅ SILAKAN AMBIL: " + nama.toUpperCase();
+                  document.getElementById("pesan-layar").style.color = "#2ecc71";
+                  alert("Pembayaran Berhasil! Silakan ambil kue Anda 👇");
+                  
+                  // Refresh data stok
+                  fetchProducts(); 
+                  resetButton();
+
+                } catch (errDb) {
+                  alert("Pembayaran masuk, tapi gagal update database. Foto bukti bayar!");
+                  console.error(errDb);
+                  resetButton();
+                }
             },
             onPending: function(result){
                 alert("Menunggu pembayaran...");
                 resetButton();
             },
             onError: function(result){
-                alert("Pembayaran Gagal!");
+                alert("Pembayaran Gagal/Dibatalkan.");
                 resetButton();
             },
             onClose: function(){
-                // Kalau user tutup popup tanpa bayar
                 resetButton(); 
             }
         });
@@ -307,6 +313,24 @@
         resetButton();
     }
   }
+
+  // --- LOGIKA TIMER IDLE (AUTO RESET KE LAYAR IKLAN) ---
+  // Supaya kalau ditinggal orang, layar balik ke video iklan
+  let idleTime = 0;
+  
+  const resetTimer = () => { idleTime = 0; };
+  document.onmousemove = resetTimer;
+  document.onkeypress = resetTimer;
+  document.ontouchstart = resetTimer; 
+  document.onclick = resetTimer;
+
+  setInterval(() => {
+    idleTime++;
+    // Kalau diam 2 menit, balik ke vending.html
+    if (idleTime >= 2) { 
+       window.location.href = "vending.html"; 
+    }
+  }, 60000); // Cek tiap 1 menit
 </script>
 
 </body>
