@@ -501,5 +501,44 @@
   }
 </script>
 
+<script>
+  (function() {
+      // 1. Cek apakah ada tanda "?mode=mesin" di alamat webnya?
+      const urlParams = new URLSearchParams(window.location.search);
+      const isMesin = urlParams.get('mode') === 'mesin';
+
+      // Kalo BUKAN dari mesin (orang buka biasa dari HP), STOP di sini. Jangan jalankan timer.
+      if (!isMesin) return; 
+
+      // --- Mulai dari sini ke bawah cuma jalan kalau dibuka lewat Vending Machine ---
+      
+      const idleDuration = 60000; // 60000 ms = 1 Menit
+      let time;
+
+      function userIsIdle() {
+          console.log("User mesin nganggur, reset...");
+          
+          // Kosongkan keranjang (PENTING buat mesin umum)
+          localStorage.removeItem("cart"); 
+          
+          // Balik ke vending
+          window.location.href = "vending.html"; 
+      }
+
+      function resetTimer() {
+          clearTimeout(time);
+          time = setTimeout(userIsIdle, idleDuration);
+      }
+
+      // Daftar event untuk mendeteksi aktivitas user
+      window.onload = resetTimer;
+      document.onmousemove = resetTimer;
+      document.onkeypress = resetTimer;
+      document.ontouchstart = resetTimer; // Penting buat layar sentuh
+      document.onclick = resetTimer;
+      document.onscroll = resetTimer;
+  })();
+</script>
+
 </body>
 </html>
