@@ -1,282 +1,541 @@
-// ===============================================================
-// WORKER FINAL V6.6 - AUTO DETECT + ANTI RACE CONDITION
-// ===============================================================
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toko Cake and Cookies AAA</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
+  <style>
+    /* RESET UMUM */
+    body { font-family: 'Poppins', sans-serif; background: #f6f6f6; padding: 20px; margin: 0; }
+    
+    h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; } 
+    .subtitle { text-align: center; color: #555; margin-bottom: 30px; font-size: 15px; }
+    
+    /* --- PRODUK GRID (Responsive) --- */
+    .produk-container {
+      display: grid;
+      /* Menggunakan minmax 160px agar di HP bisa muat 2 kolom (kiri-kanan) */
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+      gap: 15px;
+      max-width: 1200px; 
+      margin: auto;
+      padding-bottom: 50px;
+    }
 
-    // HEADERS CORS
-    const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
+    .produk {
+      background: white; padding: 10px; border-radius: 14px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08); text-align: center;
+      transition: transform 0.3s ease; position: relative;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    
+    .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
+
+    /* --- GAMBAR KOTAK PROPORSIONAL --- */
+    .produk img {
+      width: 100%; 
+      /* aspect-ratio: 1 / 1 membuat gambar selalu KOTAK (Square) */
+      aspect-ratio: 1 / 1; 
+      object-fit: cover; /* Mencegah gambar gepeng */
+      border-radius: 10px; margin-bottom: 10px;
+      background-color: #eee; /* Placeholder warna abu saat loading */
+    }
+
+    .stok-badge {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(0,0,0,0.7); color: white;
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold;
+      z-index: 2;
+      backdrop-filter: blur(2px);
+    }
+
+    .produk h3 { 
+        margin: 5px 0; font-size: 15px; line-height: 1.3; 
+        min-height: 40px; /* Supaya tinggi judul seragam */ 
+        display: flex; align-items: center; justify-content: center;
+    }
+    .harga { font-weight: 700; margin: 5px 0 10px; color: #d35400; font-size: 15px; }
+    
+    /* Tombol Beli */
+    button.btn-beli {
+      background: #25D366; color: white; border: none;
+      padding: 10px 0; width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;
+      transition: background 0.2s;
+    }
+    button.btn-beli:hover { background: #1da851; }
+    button.btn-beli:disabled { background: #ccc; cursor: not-allowed; }
+
+    /* --- KERANJANG --- */
+    .cart {
+      max-width: 500px;
+      width: 100%;        
+      margin: 40px auto 20px;
+      background: white;
+      padding: 25px; border-radius: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .cart-header {
+      display: flex; justify-content: space-between; align-items: center; 
+      margin-bottom: 20px; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px;
+    }
+    
+    .btn-clear {
+      background: #ff4757; color: white; font-size: 13px; padding: 6px 12px; border-radius: 6px; border:none; cursor: pointer;
+    }
+    .btn-clear:hover { background: #ff6b81; }
+
+    .cart-item {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px;
+    }
+    
+    .item-info strong { font-size: 16px; color: #333; }
+    .item-info small { color: #888; font-size: 13px; }
+
+    .qty { display: flex; align-items: center; gap: 5px; }
+    .qty button { 
+      padding: 0; width: 32px; height: 32px; font-size: 18px; 
+      background: #f1f2f6; color: #333; display: flex; border:none; cursor: pointer;
+      align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .qty button:active { background: #dfe4ea; }
+    .qty input { 
+      width: 40px; text-align: center; border: 1px solid #ddd; 
+      border-radius: 4px; padding: 5px; font-weight: bold;
+    }
+
+    .total { font-weight: 700; margin-top: 20px; font-size: 20px; text-align: right; color: #2d3436; }
+    .btn-checkout { 
+      margin-top: 20px; width: 100%; background: #0984e3; color: white; border: none; cursor: pointer;
+      font-size: 18px; padding: 14px; box-shadow: 0 4px 10px rgba(13, 110, 253, 0.2); border-radius: 8px;
+    }
+    .btn-checkout:hover { background: #0076d1; }
+    .btn-checkout:disabled { background: #b2bec3; cursor: not-allowed; }
+    
+    .loading-msg { text-align: center; width: 100%; grid-column: 1 / -1; font-style: italic; color: #888; margin: 40px 0; }
+
+    /* --- FOOTER & CONTACT --- */
+    .footer {
+      text-align: center; margin-top: 40px; padding: 30px 20px; 
+      border-top: 1px solid #ddd; color: #777; font-size: 14px;
+      background-color: #fff; border-radius: 14px;
+    }
+    
+    .contact-box {
+      margin-bottom: 25px; padding-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+    .contact-box h4 { margin: 0 0 15px; color: #333; font-size: 16px; }
+
+    .sosmed-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none; color: white; font-weight: 600;
+      padding: 10px 20px; border-radius: 50px; margin: 5px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .sosmed-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .sosmed-btn i { font-size: 20px; }
+
+    .btn-wa { background-color: #25D366; }
+    .btn-wa:hover { background-color: #1da851; }
+    .btn-ig { 
+      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%); 
+    }
+
+    .footer a.policy-link {
+      color: #888; text-decoration: none; font-size: 13px; cursor: pointer;
+    }
+    .footer a.policy-link:hover { color: #d35400; text-decoration: underline; }
+
+    /* --- MODAL STYLES --- */
+    .modal-overlay {
+      display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+      width: 100%; height: 100%; overflow: auto;
+      background-color: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+
+    .modal-content {
+      background-color: #fff; margin: auto; padding: 30px;
+      border-radius: 12px; width: 90%; max-width: 600px;
+      position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      max-height: 80vh; overflow-y: auto;
+    }
+
+    .close-modal {
+      color: #aaa; float: right; font-size: 28px; font-weight: bold;
+      cursor: pointer; position: absolute; right: 20px; top: 10px;
+    }
+    .close-modal:hover { color: #000; }
+
+    .modal-body h2 { color: #333; margin-top: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; font-size: 20px; }
+    .modal-body h3 { font-size: 16px; margin-top: 15px; color: #d35400; }
+    .modal-body p, .modal-body li { color: #555; line-height: 1.6; font-size: 14px; }
+    .modal-body ul { padding-left: 20px; margin-bottom: 15px; }
+    .separator { border: 0; border-top: 1px dashed #ccc; margin: 30px 0; }
+  </style>
+</head>
+
+<body>
+
+<h1 id="pesan-layar">🍰 Toko Cake and Cookies AAA</h1>
+<p class="subtitle">Brownies, cake & cookies homemade (Live Stock)</p>
+
+<div class="produk-container" id="produk-list">
+  <div class="loading-msg">⏳ Sedang mengambil kue dari oven...</div>
+</div>
+
+<div class="cart">
+  <div class="cart-header">
+    <h2 style="display: flex; align-items: center; gap: 10px; margin: 0;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"></circle>
+        <circle cx="20" cy="21" r="1"></circle>
+        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+      </svg>
+      Keranjang Belanja
+    </h2>
+    <button class="btn-clear" onclick="hapusKeranjang()">🗑️ Hapus Semua</button>
+  </div>
+  
+  <div id="cart-items"></div>
+  <div class="total" id="total">Total: Rp 0</div>
+  
+  <button class="btn-checkout" id="btn-bayar" onclick="mulaiPembayaranMidtrans()">Bayar Sekarang</button>
+  <p style="text-align: center; font-size: 13px; color: #888; margin-top: 15px;">
+    *Jika batal bayar, mohon klik tanda silang (X) di pojok kanan atas popup.
+  </p>
+</div>
+
+<div class="footer">
+  <div class="contact-box">
+    <h4>Hubungi Kami:</h4>
+    <a href="https://wa.me/6282328071728" target="_blank" class="sosmed-btn btn-wa">
+      <i class="fa-brands fa-whatsapp"></i> WhatsApp
+    </a>
+    <a href="https://instagram.com/aaa.cakecookies" target="_blank" class="sosmed-btn btn-ig">
+      <i class="fa-brands fa-instagram"></i> Instagram
+    </a>
+  </div>
+  &copy; 2025 Toko Cake and Cookies AAA.<br>
+  <a onclick="openRefundModal()" class="policy-link">Kebijakan Toko & Syarat Ketentuan (S&K)</a>
+</div>
+
+<div id="refundModal" class="modal-overlay">
+  <div class="modal-content">
+    <span class="close-modal" onclick="closeRefundModal()">&times;</span>
+    <div class="modal-body">
+      <h2>Kebijakan Pengembalian (Refund)</h2>
+      <h3>1. Wajib Cek di Kasir</h3>
+      <p>Mohon periksa kondisi fisik kue/cookies <strong>sebelum meninggalkan area kasir/toko</strong>. Komplain mengenai bentuk hancur atau salah varian setelah Anda meninggalkan toko tidak dapat kami terima.</p>
+      <h3>2. Kerusakan di Perjalanan</h3>
+      <p>Segala kerusakan yang terjadi selama perjalanan pulang (misal: kue miring atau toples pecah karena guncangan) adalah di luar tanggung jawab kami.</p>
+      <h3>3. Kondisi yang Diterima untuk Refund</h3>
+      <ul>
+        <li>Produk ternyata <strong>basi/berjamur</strong> saat dibuka (maksimal 1x24 jam).</li>
+        <li>Terdapat benda asing di dalam makanan.</li>
+        <li>Kesalahan fatal dari dapur yang tidak terlihat dari luar.</li>
+      </ul>
+      <hr class="separator">
+      <h2>Syarat & Ketentuan (T&C)</h2>
+      <h3>1. Pemesanan & Stok (Live Stock)</h3>
+      <p>Sistem kami menggunakan <em>Real-time Stock</em>. Produk di keranjang belum resmi milik Anda sampai pembayaran dikonfirmasi. Siapa cepat dia dapat.</p>
+      <h3>2. Pembayaran</h3>
+      <p>Pembayaran online diproses melalui Payment Gateway (Midtrans). Biaya transaksi atau admin yang muncul (jika ada) ditanggung oleh pembeli. Pembayaran yang sudah sukses tidak dapat dibatalkan sepihak.</p>
+      <h3>3. Informasi Alergen (Penting!)</h3>
+      <p>Produk kami diproduksi di dapur yang juga mengolah <strong>kacang-kacangan, susu, telur, dan tepung terigu (gluten)</strong>. Harap berhati-hati bagi yang memiliki alergi berat.</p>
+      <h3>4. Keadaan Kahar (Force Majeure)</h3>
+      <p>Jika terjadi bencana alam atau mati listrik massal yang membuat kami gagal memproduksi pesanan Anda, kami berhak membatalkan pesanan dan mengembalikan dana (refund) 100%.</p>
+      <p style="margin-top:20px; font-size:13px; color:#888; text-align:center;">
+        <em>Dengan berbelanja di sini, Anda dianggap telah membaca dan menyetujui seluruh kebijakan di atas.</em>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript"
+  src="https://app.midtrans.com/snap/snap.js"
+  data-client-key="Mid-client-vkVSkv_rBJsbJj7B"> 
+</script>
+
+<script>
+  // URL WORKER
+  const API_BASE_URL = "https://vending-machine-server.fahmyainun.workers.dev"; 
+
+  const productImages = {
+    "p1": "brownieskukus.jpg",
+    "p2": "boluketanhitam.jpg",
+    "p3": "cakecookies.jpg",
+    "p4": "bananarolls.jpg", 
+    "p5": "fudgybrownies.jpg",
+    "p6": "kastengels.jpg",
+    "p7": "bolugulungkacangkejucoklat.jpg",
+    "p8": "nastar.jpg",
+    "p9": "bolugulung.jpg",
+    "p10": "1000.jpg",
+    // Tambahkan fallback image jika perlu
+    "default": "https://via.placeholder.com/300?text=Kue+Enak"
+  };
+
+  let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  let productsData = []; 
+
+  document.addEventListener("DOMContentLoaded", () => {
+    fetchProducts();
+    renderCart();
+  });
+
+  // --- LOGIC MODAL ---
+  const modal = document.getElementById("refundModal");
+  function openRefundModal() { modal.style.display = "flex"; }
+  function closeRefundModal() { modal.style.display = "none"; }
+  window.onclick = function(event) { if (event.target == modal) modal.style.display = "none"; }
+
+  // --- FUNGSI AMBIL DATA ---
+  async function fetchProducts() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/products`);
+      if (!res.ok) throw new Error("Gagal ambil data");
+      productsData = await res.json();
+      renderProducts(productsData);
+    } catch (err) {
+      document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat produk. Cek koneksi.</p>`;
+    }
+  }
+
+  // --- FUNGSI RENDER PRODUK (SUDAH DIPERBAIKI DENGAN HIDDEN LOGIC) ---
+  function renderProducts(products) {
+    const container = document.getElementById("produk-list");
+    container.innerHTML = "";
+    
+    // --- DAFTAR PRODUK YANG DISEMBUYIKAN DARI TOKO UTAMA ---
+    const hiddenProducts = ["p11", "p12", "p13", "p14", "p15", "p16", "p17", "p18"]; 
+
+    // Kita filter dulu (buang yg hidden), baru di-Map (render ke HTML)
+    const htmlString = products
+      .filter(p => !hiddenProducts.includes(p.id)) // <--- Logika filter disini
+      .map(p => {
+        // Ambil URL gambar, atau pakai default jika ID tidak ada di map
+        const imgUrl = productImages[p.id] || productImages["default"];
+        const isHabis = p.stock <= 0;
+        const hargaFmt = p.price.toLocaleString('id-ID'); // Format rupiah
+        
+        return `
+          <div class="produk">
+            <div class="stok-badge">Stok: ${p.stock}</div>
+            <img src="${imgUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${productImages.default}'">
+            <h3>${p.name}</h3>
+            <div class="harga">Rp ${hargaFmt}</div>
+            <button class="btn-beli" onclick="addToCart('${p.id}', '${p.name}', ${p.price}, ${p.stock})" ${isHabis ? "disabled" : ""}>
+              ${isHabis ? "Habis" : "🛒 Beli"}
+            </button>
+          </div>
+        `;
+    }).join('');
+
+    container.innerHTML = htmlString;
+  }
+
+  // --- FUNGSI KERANJANG ---
+  function addToCart(id, nama, harga, maxStock) {
+    const item = cart.find(p => p.id === id);
+    if (item) {
+      if (item.qty < maxStock) item.qty++;
+      else return alert("Stok maksimal tercapai untuk item ini!");
+    } else {
+      cart.push({ id, nama, harga, qty: 1, maxStock });
+    }
+    saveCart(); renderCart();
+  }
+
+  function changeQty(id, delta) {
+    const item = cart.find(p => p.id === id);
+    if (!item) return;
+    const newQty = item.qty + delta;
+    if (delta > 0 && newQty > item.maxStock) return alert("Stok mentok!");
+    item.qty = newQty;
+    if (item.qty <= 0) cart = cart.filter(p => p.id !== id);
+    saveCart(); renderCart();
+  }
+
+  function hapusKeranjang() {
+    if(confirm("Yakin ingin mengosongkan keranjang?")) {
+        cart = [];
+        localStorage.removeItem("cart");
+        renderCart();
+    }
+  }
+
+  function renderCart() {
+    const el = document.getElementById("cart-items");
+    el.innerHTML = "";
+    if (cart.length === 0) {
+        el.innerHTML = "<p style='text-align:center; color:#999; padding:20px;'>Keranjang belanja Anda kosong.</p>";
+        document.getElementById("total").innerText = "Total: Rp 0";
+        return;
+    }
+    let total = 0;
+    cart.forEach(i => {
+      total += i.harga * i.qty;
+      el.innerHTML += `
+        <div class="cart-item">
+          <div class="item-info">
+            <strong>${i.nama}</strong><br>
+            <small>@ Rp ${i.harga.toLocaleString()}</small>
+          </div>
+          <div class="qty">
+            <button onclick="changeQty('${i.id}', -1)">−</button>
+            <input type="text" value="${i.qty}" readonly>
+            <button onclick="changeQty('${i.id}', 1)">+</button>
+          </div>
+        </div>`;
+    });
+    document.getElementById("total").innerText = "Total: Rp " + total.toLocaleString();
+  }
+
+  function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
+
+  // ==========================================================
+  // --- FUNGSI PEMBAYARAN ---
+  // ==========================================================
+  async function mulaiPembayaranMidtrans() {
+    if (!cart.length) return alert("Keranjang kosong!");
+
+    const btn = document.getElementById("btn-bayar");
+    btn.innerHTML = "⏳ Memproses...";
+    btn.disabled = true;
+
+    const myOrderId = "ORDER-" + Date.now(); 
+
+    const resetButton = () => {
+        btn.innerHTML = "Bayar Sekarang";
+        btn.disabled = false;
     };
 
-    if (request.method === "OPTIONS") {
-      return new Response("OK", { headers: corsHeaders });
-    }
-
-    // ROUTE 1: CEK SERVER
-    if (url.pathname === "/" || url.pathname === "/ping") {
-      return new Response("Server Ready (Auto-Detect + Anti-Race)!", { status: 200, headers: corsHeaders });
-    }
-
-    // ROUTE 2: AMBIL DAFTAR PRODUK
-    if (url.pathname === "/products" && request.method === "GET") {
-      try {
-        const { results } = await env.db_pembayaran.prepare("SELECT * FROM products").all();
-        return jsonResponse(results, 200, corsHeaders);
-      } catch (e) {
-        return jsonResponse({ error: e.message }, 500, corsHeaders);
-      }
-    }
-
-    // ROUTE 3: BAYAR (Step 1 - Simpan ke DB & Potong Stok)
-    if (url.pathname === "/bayar" && request.method === "POST") {
-      return handlePotongStok(request, env, ctx, corsHeaders);
-    }
-
-    // ROUTE 4: TOKEN (Step 2 - Request ke Midtrans)
-    if (url.pathname === "/api/get-token" && request.method === "POST") {
-      return handleGetToken(request, env, corsHeaders);
-    }
-
-    // ROUTE 5: NOTIFIKASI (Step 3 - Webhook dari Midtrans - UPDATED)
-    if (url.pathname === "/notification" && request.method === "POST") {
-      return handleNotification(request, env, corsHeaders);
-    }
-
-    // =================================================================
-    // ROUTE KHUSUS HARDWARE (ESP32)
-    // =================================================================
-
-    // 1. ESP32 CEK ANTRIAN (POLLING)
-    if (url.pathname === "/hardware/check" && request.method === "GET") {
-       try {
-          const queue = await env.db_pembayaran.prepare(`
-             SELECT * FROM transactions 
-             WHERE status = 'PAID' AND (dispensed = 0 OR dispensed IS NULL)
-             ORDER BY created_at ASC 
-             LIMIT 1
-          `).first();
-
-          if (!queue) {
-             return jsonResponse({ available: false }, 200, corsHeaders);
-          }
-
-          return jsonResponse({ 
-             available: true, 
-             order_id: queue.user_token,
-             product_id: queue.product_id,
-             quantity: queue.quantity 
-          }, 200, corsHeaders);
-
-       } catch (e) { return jsonResponse({ error: e.message }, 500, corsHeaders); }
-    }
-
-    // 2. ESP32 KONFIRMASI SUKSES (UPDATE DB SETELAH SERVO MUTAR)
-    if (url.pathname === "/hardware/confirm" && request.method === "POST") {
-       try {
-          const body = await request.json();
-          const { order_id } = body;
-
-          await env.db_pembayaran.prepare("UPDATE transactions SET dispensed = 1 WHERE user_token = ?")
-             .bind(order_id)
-             .run();
-
-          return jsonResponse({ success: true }, 200, corsHeaders);
-       } catch (e) { return jsonResponse({ error: e.message }, 500, corsHeaders); }
-    }
-
-    return new Response("Not Found", { status: 404, headers: corsHeaders });
-  }
-};
-
-// ---------------------------------------------------------------
-// 1. FUNGSI HANDLE POTONG STOK
-// ---------------------------------------------------------------
-async function handlePotongStok(request, env, ctx, corsHeaders) {
     try {
-        const body = await request.json();
-        const { user_token, email } = body;
+        // 1. Simpan detail order ke DB (endpoint /bayar)
+        await simpanOrderKeDatabase(myOrderId);
+
+        // 2. Siapkan data item (hanya ID dan Qty)
+        const itemsToSend = cart.map(item => ({
+            id: item.id,
+            quantity: item.qty
+        }));
+
+        btn.innerHTML = "⏳ Menghubungi Bank...";
         
-        let items = body.items;
-        if (!items && body.product_id) {
-            items = [{ id: body.product_id, quantity: body.quantity || 1 }];
-        }
-
-        if (!items || items.length === 0 || !user_token) {
-            return jsonResponse({ error: "Keranjang kosong atau data tidak lengkap" }, 400, corsHeaders);
-        }
-
-        const finalEmail = (!email || email.trim() === "") ? "tamu@tokokue.com" : email;
-        const createdAt = new Date().toISOString();
-
-        for (const item of items) {
-            const product = await env.db_pembayaran.prepare("SELECT * FROM products WHERE id = ?").bind(item.id).first();
-            
-            if (!product) return jsonResponse({ error: `Produk ID ${item.id} tidak ditemukan` }, 404, corsHeaders);
-            if (product.stock < item.quantity) return jsonResponse({ error: `Stok ${product.name} habis!` }, 400, corsHeaders);
-
-            const totalPerItem = product.price * item.quantity;
-            const sisaStokBaru = product.stock - item.quantity;
-
-            // Potong Stok
-            await env.db_pembayaran.prepare("UPDATE products SET stock = stock - ? WHERE id = ?").bind(item.quantity, item.id).run();
-
-            // Notif Telegram (Background)
-            if (sisaStokBaru <= 1) {
-                ctx.waitUntil(kirimTelegram(product.name, sisaStokBaru, product.id, env));
-            }
-
-            // Insert Transaksi (PENDING)
-            await env.db_pembayaran.prepare(`
-                INSERT INTO transactions (user_token, product_id, quantity, unit_price, total_price, status, email, created_at) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `).bind(user_token, product.id, item.quantity, product.price, totalPerItem, "PENDING", finalEmail, createdAt).run();
-        }
-
-        return jsonResponse({ success: true, message: "Order berhasil disimpan", order_id: user_token }, 200, corsHeaders);
-
-    } catch (e) { return jsonResponse({ error: e.message }, 500, corsHeaders); }
-}
-
-// ---------------------------------------------------------------
-// 2. FUNGSI HANDLE GET TOKEN (AUTO DETECT SANDBOX/PROD)
-// ---------------------------------------------------------------
-async function handleGetToken(request, env, corsHeaders) {
-    try {
-        const serverKey = env.MIDTRANS_SERVER_KEY;
-        if (!serverKey) throw new Error("Server Key Missing");
-
-        // 🔥 DETEKSI OTOMATIS: Apakah ini kunci Sandbox?
-        const isSandbox = serverKey.includes("SB-Mid-");
-        const midtransUrl = isSandbox 
-            ? "https://app.sandbox.midtrans.com/snap/v1/transactions" // Jalur Test
-            : "https://app.midtrans.com/snap/v1/transactions";        // Jalur Production
-
-        const body = await request.json();
-        
-        let itemsInput = body.items;
-        if (!itemsInput && body.product_id) itemsInput = [{ id: body.product_id, quantity: body.quantity || 1 }];
-        if (!itemsInput || itemsInput.length === 0) throw new Error("Tidak ada barang");
-
-        const orderId = body.order_id || ("TRX-" + Date.now()); 
-        const userEmail = body.email || "tamu@tokokue.com";
-
-        let grossAmount = 0;
-        let midtransItemDetails = [];
-
-        for (const item of itemsInput) {
-            const productDB = await env.db_pembayaran.prepare("SELECT id, price, name FROM products WHERE id = ?").bind(item.id).first();
-            if (!productDB) throw new Error(`Produk ID ${item.id} tidak valid`);
-
-            grossAmount += productDB.price * item.quantity;
-            midtransItemDetails.push({
-                id: productDB.id, price: productDB.price, quantity: item.quantity, name: productDB.name
-            });
-        }
-
-        const authString = btoa(serverKey + ":");
-
-        // Request ke Midtrans (URL Dinamis)
-        const midtransRes = await fetch(midtransUrl, {
+        // 3. Request Token
+        const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
-            headers: { 
-                "Accept": "application/json", "Content-Type": "application/json", 
-                "Authorization": "Basic " + authString 
-            },
-            body: JSON.stringify({
-                transaction_details: { order_id: orderId, gross_amount: grossAmount },
-                item_details: midtransItemDetails,
-                customer_details: { first_name: "Pelanggan", email: userEmail }
-            })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+                order_id: myOrderId,
+                items: itemsToSend,
+                product_name: "Aneka Kue AAA"
+            }) 
         });
 
-        const midtransData = await midtransRes.json();
-        return jsonResponse(midtransData, midtransRes.status, corsHeaders);
-
-    } catch (e) { return jsonResponse({ error: e.message }, 500, corsHeaders); }
-}
-
-// ---------------------------------------------------------------
-// 3. FUNGSI NOTIFIKASI (WEBHOOK) - 🔥 DENGAN ANTI-RACE CONDITION
-// ---------------------------------------------------------------
-async function handleNotification(request, env, corsHeaders) {
-  try {
-    const data = await request.json();
-    console.log("🔥 [WEBHOOK MASUK]:", JSON.stringify(data)); 
-
-    const orderId = String(data.order_id).trim();
-    const transactionStatus = String(data.transaction_status).toLowerCase();
-    const fraudStatus = data.fraud_status ? String(data.fraud_status).toLowerCase() : "";
-
-    let statusDb = "PENDING"; 
-
-    if (transactionStatus === 'capture') {
-      if (fraudStatus === 'challenge') statusDb = 'CHALLENGE';
-      else if (fraudStatus === 'accept') statusDb = 'PAID';
-    } else if (transactionStatus === 'settlement') {
-      statusDb = 'PAID'; 
-    } else if (['cancel', 'deny', 'expire', 'failure'].includes(transactionStatus)) {
-      statusDb = 'FAILED';
-    }
-
-    // --- LOGIKA ANTI BALAPAN (RETRY MECHANISM) ---
-    // Cek apakah data sudah ada?
-    let transaction = await env.db_pembayaran.prepare("SELECT * FROM transactions WHERE user_token = ?").bind(orderId).first();
-
-    // Jika data belum ada (Frontend lambat), tunggu 2 detik lalu cek lagi (Maksimal 3x)
-    // 
-    if (!transaction && statusDb === 'PAID') {
-        console.log(`⚠️ Data ${orderId} belum ada, menunggu frontend...`);
+        const data = await response.json();
         
-        for (let i = 0; i < 3; i++) {
-            await new Promise(r => setTimeout(r, 2000)); // Tunggu 2 detik
-            transaction = await env.db_pembayaran.prepare("SELECT * FROM transactions WHERE user_token = ?").bind(orderId).first();
-            if (transaction) break; // Kalau sudah muncul, lanjut update!
+        if (data.error) {
+            alert("Error: " + data.error);
+            resetButton(); return;
         }
+        
+        if (!data.token) {
+            alert("Gagal koneksi Token.");
+            resetButton(); return;
+        }
+
+        window.snap.pay(data.token, {
+            onSuccess: function(result){
+                console.log("Pembayaran Sukses!", result);
+                const judul = document.getElementById("pesan-layar");
+                if (judul) {
+                    judul.innerText = "TERIMA KASIH! SILAKAN AMBIL KUE 🍰";
+                    judul.style.color = "#27ae60"; 
+                }
+                cart = []; 
+                localStorage.removeItem("cart");
+                renderCart();
+                fetchProducts(); 
+                alert("Pembayaran Berhasil! Silakan ambil pesanan Anda 👇");
+                resetButton();
+            },
+            onPending: function(result){
+                alert("Menunggu pembayaran...");
+                resetButton();
+            },
+            onError: function(result){
+                alert("Pembayaran Gagal!");
+                resetButton();
+            },
+            onClose: function(){
+                console.log('Popup closed');
+                resetButton(); 
+            }
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Terjadi kesalahan sistem. Cek koneksi internet.");
+        resetButton();
     }
-    // ---------------------------------------------
-
-    if (statusDb === 'PAID') {
-        // Gunakan logic UPDATE yang memastikan baris ter-update
-        const result = await env.db_pembayaran.prepare("UPDATE transactions SET status = 'PAID' WHERE user_token = ?").bind(orderId).run();
-        console.log(`✅ Update PAID untuk ${orderId}. Rows affected: ${result.meta.changes}`);
-    } else {
-        await env.db_pembayaran.prepare("UPDATE transactions SET status = ? WHERE user_token = ?").bind(statusDb, orderId).run();
-    }
-
-    return new Response("OK", { status: 200, headers: corsHeaders });
-
-  } catch (error) {
-    console.error("❌ WEBHOOK ERROR:", error.message);
-    return new Response("OK", { status: 200, headers: corsHeaders });
   }
-}
 
-function jsonResponse(data, status, headers) {
-    return new Response(JSON.stringify(data), { status, headers: { ...headers, "Content-Type": "application/json" } });
-}
-
-// ---------------------------------------------------------------
-// 4. TELEGRAM NOTIF
-// ---------------------------------------------------------------
-async function kirimTelegram(namaProduk, sisaStok, slotID, env) {
-  const BOT_TOKEN = env.TELEGRAM_BOT_TOKEN;
-  const CHAT_ID = env.TELEGRAM_CHAT_ID; 
-
-  if (!BOT_TOKEN || !CHAT_ID) return;
-
-  const pesan = `🚨 *STOK KRITIS*\n📦: *${namaProduk}*\n📍: *${slotID}*\n⚠️ Sisa: *${sisaStok}*`;
-  const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
-
-  try {
-    await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: CHAT_ID, text: pesan, parse_mode: 'Markdown' })
+  // Helper Simpan ke DB
+  async function simpanOrderKeDatabase(orderId) {
+    const promises = cart.map(item => {
+        return fetch(`${API_BASE_URL}/bayar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: item.id,
+            user_token: orderId, 
+            quantity: item.qty
+          })
+        });
     });
-  } catch (e) { console.log("Telegram Error:", e); }
-}
+    await Promise.all(promises);
+  }
+</script>
+
+<script>
+  (function() {
+      // Fitur Auto Reset jika mode=mesin
+      const urlParams = new URLSearchParams(window.location.search);
+      const isMesin = urlParams.get('mode') === 'mesin';
+
+      if (!isMesin) return; 
+
+      const idleDuration = 60000; // 1 Menit
+      let time;
+
+      function userIsIdle() {
+          console.log("User mesin nganggur, reset...");
+          localStorage.removeItem("cart"); 
+          window.location.href = "vending.html"; 
+      }
+
+      function resetTimer() {
+          clearTimeout(time);
+          time = setTimeout(userIsIdle, idleDuration);
+      }
+
+      window.onload = resetTimer;
+      document.onmousemove = resetTimer;
+      document.onkeypress = resetTimer;
+      document.ontouchstart = resetTimer; 
+      document.onclick = resetTimer;
+      document.onscroll = resetTimer;
+  })();
+</script>
+
+</body>
+</html>
