@@ -244,8 +244,6 @@
       if (!res.ok) throw new Error("Gagal ambil data");
       
       const allProducts = await res.json();
-      
-      // Filter produk khusus vending (p11 - p14)
       const productsData = allProducts.filter(item => vendingProductIDs.includes(item.id));
 
       if (productsData.length === 0) {
@@ -258,7 +256,6 @@
     }
   }
 
-  // --- FUNGSI TAMPILKAN PRODUK ---
   function renderProducts(products) {
     const container = document.getElementById("produk-list");
     container.innerHTML = "";
@@ -291,7 +288,7 @@
   }
 
   // ==========================================================
-  // --- FUNGSI BELI LANGSUNG (DIPERBAIKI) ---
+  // --- FUNGSI BELI LANGSUNG (LOGIKA DIPERBAIKI) ---
   // ==========================================================
   async function beliLangsung(id, nama, harga) {
     if (typeof window.snap === 'undefined') {
@@ -299,12 +296,15 @@
         return;
     }
 
+    // ⚠️ PERINGATAN PENTING UNTUK HARDWARE ⚠️
+    // Pastikan kode Arduino/ESP32 Anda sudah mengenali ID "p11", "p12", dll.
+    // Jika Arduino hanya diprogram untuk "p1", "p2", maka "p11" tidak akan menggerakkan servo!
+    
     const btnId = "btn-" + id; 
     const btn = document.getElementById(btnId);
-    
-    // UI Loading
     const originalText = btn.innerText;
-    btn.innerHTML = "⏳ Menghubungi Bank...";
+    
+    btn.innerHTML = "⏳ Menyiapkan Sistem...";
     btn.disabled = true;
 
     const resetButton = () => {
@@ -315,21 +315,27 @@
     const myOrderId = "ORDER-" + Date.now(); 
 
     try {
-        // [PERBAIKAN UTAMA]
-        // 1. KIRIM DATA KE DATABASE / SERIAL MONITOR DULU (Sama seperti index.html)
-        // Ini akan men-trigger Serial Monitor di ESP32 karena ada request masuk ke /bayar
-        await fetch(`${API_BASE_URL}/bayar`, {
+        console.log("1. Memulai Transaksi untuk ID:", id);
+
+        // --- LANGKAH 1: REKAM KE DATABASE DULU (WAJIB) ---
+        // Ini memastikan Arduino bisa melihat order ini sbg "PENDING" atau siap diproses
+        const saveResponse = await fetch(`${API_BASE_URL}/bayar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             product_id: id,
-            user_token: myOrderId, 
+            user_token: myOrderId, // Token ini jadi kunci pencocokan
             quantity: 1 
           })
         });
 
-        // 2. REQUEST TOKEN PEMBAYARAN
-        const response = await fetch(`${API_BASE_URL}/api/get-token`, {
+        if (!saveResponse.ok) {
+            throw new Error("Gagal menyimpan data ke mesin.");
+        }
+        console.log("2. Data tersimpan di DB. Meminta Token Midtrans...");
+
+        // --- LANGKAH 2: MINTA TOKEN PEMBAYARAN ---
+        const tokenResponse = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -339,32 +345,50 @@
             }) 
         });
 
-        const data = await response.json();
+        const data = await tokenResponse.json();
         
-        if (data.error) { alert("Error Server: " + data.error); resetButton(); return; }
-        if (!data.token) { alert("Gagal mendapatkan Token."); resetButton(); return; }
+        if (data.error) { throw new Error(data.error); }
+        if (!data.token) { throw new Error("Token tidak diterima"); }
 
-        // 3. TAMPILKAN POPUP SNAP
+        console.log("3. Token diterima. Membuka Snap...");
+
+        // --- LANGKAH 3: TAMPILKAN POPUP ---
+        btn.innerHTML = "💰 Menunggu Pembayaran...";
+        
         window.snap.pay(data.token, {
             onSuccess: async function(result){
-                console.log("Sukses Midtrans!", result);
-                btn.innerHTML = "🔄 Selesai...";
+                console.log("4. Pembayaran Sukses!", result);
+                btn.innerHTML = "🔄 Memproses Barang...";
 
-                // Update UI Layar
-                document.getElementById("pesan-layar").innerText = "✅ SILAKAN AMBIL: " + nama.toUpperCase();
+                // Kirim ulang konfirmasi (Opsional, untuk memastikan status PAID di backend cepat berubah)
+                // Tapi biasanya Webhook Midtrans sudah menangani ini.
+                // Kita hit endpoint ini lagi sekedar trigger 'refresh' kalau backend support.
+                await fetch(`${API_BASE_URL}/bayar`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        product_id: id,
+                        user_token: myOrderId,
+                        quantity: 1 
+                    })
+                });
+
+                document.getElementById("pesan-layar").innerText = "✅ TRANSAKSI BERHASIL! TUNGGU KUE...";
                 document.getElementById("pesan-layar").style.color = "#2ecc71";
                 
-                // Refresh agar stok di layar berkurang (ambil data baru)
-                fetchProducts(); 
-                alert("Pembayaran Berhasil! Silakan ambil barang Anda di bawah 👇");
-                resetButton();
+                // Beri waktu mesin merespons sebelum refresh stok
+                setTimeout(() => {
+                    fetchProducts(); 
+                    alert("Pembayaran Berhasil! Mesin akan mengeluarkan barang sejenak lagi.");
+                    resetButton();
+                }, 2000);
             },
             onPending: function(result){
                 alert("Menunggu pembayaran...");
                 resetButton();
             },
             onError: function(result){
-                alert("Pembayaran Gagal/Dibatalkan.");
+                alert("Pembayaran Gagal.");
                 resetButton();
             },
             onClose: function(){
@@ -373,13 +397,13 @@
         });
 
     } catch (error) {
-        console.error("Error Beli:", error);
+        console.error("CRITICAL ERROR:", error);
         alert("Gagal koneksi: " + error.message);
         resetButton();
     }
   }
 
-  // --- AUTO REFRESH (Jaga-jaga error network/idle) ---
+  // --- AUTO REFRESH ---
   let idleTime = 0;
   const resetTimer = () => { idleTime = 0; };
   document.onmousemove = resetTimer;
@@ -389,7 +413,7 @@
 
   setInterval(() => {
     idleTime++;
-    if (idleTime >= 2) { // 2 Menit tidak ada aktivitas -> Refresh
+    if (idleTime >= 2) { 
        window.location.reload(); 
     }
   }, 60000); 
