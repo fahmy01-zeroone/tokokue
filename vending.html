@@ -284,7 +284,7 @@
         btn.disabled = false;
     };
 
-    const myOrderId = "ORDER-" + Date.now(); 
+    const myOrderId = "Vend-" + Date.now(); 
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
@@ -293,7 +293,7 @@
             body: JSON.stringify({ 
                 order_id: myOrderId,
                 items: [{ id: id, quantity: 1 }], 
-                product_name: "Order: " + nama
+                product_name: "Vending: " + nama
             }) 
         });
 
