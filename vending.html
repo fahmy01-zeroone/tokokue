@@ -18,10 +18,9 @@
     /* --- PRODUK GRID (Responsive) --- */
     .produk-container {
       display: grid;
-      /* Minmax 160px agar rapi di HP */
       grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
       gap: 15px;
-      max-width: 800px; /* Dipersempit sedikit agar fokus */
+      max-width: 800px; 
       margin: auto;
       padding-bottom: 50px; 
     }
@@ -36,7 +35,6 @@
     
     .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
 
-    /* --- GAMBAR KOTAK PROPORSIONAL --- */
     .produk img {
       width: 100%; 
       aspect-ratio: 1 / 1; 
@@ -62,9 +60,9 @@
     
     /* Tombol Beli Langsung */
     button.btn-beli {
-      background: #e67e22; /* Warna Oranye agar mencolok */
+      background: #e67e22; 
       color: white; border: none;
-      padding: 12px 0; /* Lebih besar */
+      padding: 12px 0; 
       width: 100%; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 16px;
       transition: background 0.2s, transform 0.1s;
     }
@@ -163,7 +161,7 @@
     <div class="modal-body">
       <h2>Info Vending Machine</h2>
       <h3>1. Cara Pembelian</h3>
-      <p>Sistem ini menggunakan <strong>Pembayaran Langsung (Direct Payment)</strong>. Pilih barang -> Scan QRIS -> Barang keluar otomatis. Tidak ada fitur keranjang belanja.</p>
+      <p>Sistem ini menggunakan <strong>Pembayaran Langsung (Direct Payment)</strong>. Pilih barang -> Scan QRIS -> Barang keluar otomatis.</p>
       
       <h3>2. Barang Tidak Keluar?</h3>
       <p>Jika pembayaran berhasil tapi barang <strong>tidak keluar/tersangkut</strong>:</p>
@@ -174,7 +172,7 @@
       </ul>
 
       <h3>3. Salah Pilih Barang</h3>
-      <p>Barang yang sudah dibayar dan keluar dari mesin <strong>tidak dapat ditukar atau dikembalikan</strong> (No Refund), kecuali barang tersebut kedaluwarsa/rusak saat keluar.</p>
+      <p>Barang yang sudah dibayar dan keluar dari mesin <strong>tidak dapat ditukar atau dikembalikan</strong> (No Refund).</p>
       
       <h3>4. Stok Live</h3>
       <p>Stok di layar adalah Real-time. Jika stok habis, tombol beli akan terkunci otomatis.</p>
@@ -209,16 +207,15 @@
   const API_BASE_URL = "https://vending-machine-server.fahmyainun.workers.dev"; 
 
   // DAFTAR GAMBAR PRODUK
-  // Pastikan nama file gambar sesuai dengan yang ada di folder kamu
   const productImages = {
-    "p11": "Kue Sus.jpg",      // Ganti nama file jika perlu
-    "p12": "Donat Kentang.jpg",     // Ganti nama file jika perlu
-    "p13": "Roti Labu Kuning.jpg",        // Ganti nama file jika perlu
-    "p14": "Donat Labu Kuning.jpg",        // Ganti nama file jika perlu
+    "p11": "Kue Sus.jpg",
+    "p12": "Donat Kentang.jpg",
+    "p13": "Roti Labu Kuning.jpg",
+    "p14": "Donat Labu Kuning.jpg", 
     "default": "https://via.placeholder.com/150?text=Vending+AAA"
   };
 
-  // HANYA ID INI YANG AKAN DITAMPILKAN
+  // FILTER PRODUK (HANYA P11-P14)
   const vendingProductIDs = ["p11", "p12", "p13", "p14"]; 
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -240,7 +237,7 @@
     if (event.target == waModal) waModal.style.display = "none";
   }
 
-  // --- FUNGSI AMBIL DATA ---
+  // --- FUNGSI AMBIL DATA PRODUK ---
   async function fetchProducts() {
     try {
       const res = await fetch(`${API_BASE_URL}/products`);
@@ -248,21 +245,20 @@
       
       const allProducts = await res.json();
       
-      // FILTER: Hanya ambil produk p11, p12, p13, p14
+      // Filter produk khusus vending (p11 - p14)
       const productsData = allProducts.filter(item => vendingProductIDs.includes(item.id));
 
       if (productsData.length === 0) {
           document.getElementById("produk-list").innerHTML = `<p style="text-align:center;">Produk vending sedang kosong.</p>`;
           return;
       }
-
       renderProducts(productsData);
     } catch (err) {
       document.getElementById("produk-list").innerHTML = `<p style="text-align:center; color:red">Gagal memuat: ${err.message}</p>`;
     }
   }
 
-  // --- FUNGSI RENDER PRODUK ---
+  // --- FUNGSI TAMPILKAN PRODUK ---
   function renderProducts(products) {
     const container = document.getElementById("produk-list");
     container.innerHTML = "";
@@ -285,22 +281,19 @@
           </button>
       `;
 
-      // Event Listener Tombol Beli
       if (!isHabis) {
           div.querySelector('button').onclick = function() {
               beliLangsung(p.id, p.name, p.price);
           };
       }
-
       container.appendChild(div);
     });
   }
 
   // ==========================================================
-  // --- FUNGSI BELI LANGSUNG (TANPA KERANJANG) ---
+  // --- FUNGSI BELI LANGSUNG (DIPERBAIKI) ---
   // ==========================================================
   async function beliLangsung(id, nama, harga) {
-    // Cek Midtrans Loaded?
     if (typeof window.snap === 'undefined') {
         alert("Sistem pembayaran sedang loading. Tunggu sebentar...");
         return;
@@ -322,17 +315,25 @@
     const myOrderId = "ORDER-" + Date.now(); 
 
     try {
-        // 1. Simpan PENDING order ke DB (Agar stok aman)
-        // Kita kirim ke /bayar dulu untuk inisialisasi, atau langsung minta token.
-        // Di sini kita langsung minta token, backend V6.6 biasanya sudah handle save.
-        
-        // 2. Request Token untuk 1 Item
+        // [PERBAIKAN UTAMA]
+        // 1. KIRIM DATA KE DATABASE / SERIAL MONITOR DULU (Sama seperti index.html)
+        // Ini akan men-trigger Serial Monitor di ESP32 karena ada request masuk ke /bayar
+        await fetch(`${API_BASE_URL}/bayar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            product_id: id,
+            user_token: myOrderId, 
+            quantity: 1 
+          })
+        });
+
+        // 2. REQUEST TOKEN PEMBAYARAN
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
                 order_id: myOrderId,
-                // Format items harus array
                 items: [{ id: id, quantity: 1 }], 
                 product_name: "Vending: " + nama
             }) 
@@ -340,48 +341,23 @@
 
         const data = await response.json();
         
-        if (data.error) {
-            alert("Error dari Server: " + data.error);
-            resetButton(); return;
-        }
-        
-        if (!data.token) {
-            alert("Gagal mendapatkan Token Pembayaran.");
-            resetButton(); return;
-        }
+        if (data.error) { alert("Error Server: " + data.error); resetButton(); return; }
+        if (!data.token) { alert("Gagal mendapatkan Token."); resetButton(); return; }
 
-        // 3. Tampilkan Popup Pembayaran
+        // 3. TAMPILKAN POPUP SNAP
         window.snap.pay(data.token, {
             onSuccess: async function(result){
                 console.log("Sukses Midtrans!", result);
-                btn.innerHTML = "🔄 Memproses...";
+                btn.innerHTML = "🔄 Selesai...";
+
+                // Update UI Layar
+                document.getElementById("pesan-layar").innerText = "✅ SILAKAN AMBIL: " + nama.toUpperCase();
+                document.getElementById("pesan-layar").style.color = "#2ecc71";
                 
-                // 4. Hit Endpoint /bayar untuk Konfirmasi Akhir (Simpan ke DB & Kurangi Stok)
-                try {
-                  await fetch(`${API_BASE_URL}/bayar`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      product_id: id,
-                      user_token: myOrderId, 
-                      quantity: 1 
-                    })
-                  });
-
-                  // Update UI Sukses
-                  document.getElementById("pesan-layar").innerText = "✅ SILAKAN AMBIL: " + nama.toUpperCase();
-                  document.getElementById("pesan-layar").style.color = "#2ecc71";
-                  
-                  // Refresh Produk untuk update stok di layar
-                  fetchProducts(); 
-                  alert("Pembayaran Berhasil! Silakan ambil barang Anda di bawah 👇");
-                  resetButton();
-
-                } catch (errDb) {
-                  alert("Pembayaran masuk, tapi database error. Mohon foto bukti bayar.");
-                  console.error(errDb);
-                  resetButton();
-                }
+                // Refresh agar stok di layar berkurang (ambil data baru)
+                fetchProducts(); 
+                alert("Pembayaran Berhasil! Silakan ambil barang Anda di bawah 👇");
+                resetButton();
             },
             onPending: function(result){
                 alert("Menunggu pembayaran...");
@@ -392,7 +368,6 @@
                 resetButton();
             },
             onClose: function(){
-                console.log('Popup closed');
                 resetButton(); 
             }
         });
@@ -404,7 +379,7 @@
     }
   }
 
-  // --- FITUR AUTO REFRESH (BIAR GA STUCK LAMA) ---
+  // --- AUTO REFRESH (Jaga-jaga error network/idle) ---
   let idleTime = 0;
   const resetTimer = () => { idleTime = 0; };
   document.onmousemove = resetTimer;
@@ -412,10 +387,9 @@
   document.ontouchstart = resetTimer; 
   document.onclick = resetTimer;
 
-  // Cek setiap menit, jika user diam 2 menit, refresh halaman
   setInterval(() => {
     idleTime++;
-    if (idleTime >= 2) { 
+    if (idleTime >= 2) { // 2 Menit tidak ada aktivitas -> Refresh
        window.location.reload(); 
     }
   }, 60000); 
