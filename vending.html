@@ -321,8 +321,8 @@
     });
   }
 
-  // ==========================================================
-  // --- FUNGSI BELI LANGSUNG (TELAH DIPERBAIKI URL-NYA) ---
+ // ==========================================================
+  // --- FUNGSI BELI LANGSUNG (LOGIKA FIX: STOK AMAN) ---
   // ==========================================================
   async function beliLangsung(id, nama, harga) {
     if (typeof window.snap === 'undefined') {
@@ -334,7 +334,8 @@
     const btn = document.getElementById(btnId);
     const originalText = btn.innerText;
     
-    btn.innerHTML = "⏳ Menyiapkan Sistem...";
+    // Kunci tombol biar gak dipencet 2x
+    btn.innerHTML = "⏳ Menghubungi Server...";
     btn.disabled = true;
 
     const resetButton = () => {
@@ -342,30 +343,17 @@
         btn.disabled = false;
     };
 
-    const myOrderId = "ORDER-" + Date.now(); 
+    // Buat Order ID Unik
+    const myOrderId = "ORDER-" + Date.now() + "-" + Math.floor(Math.random() * 1000); 
 
     try {
-        console.log("1. Memulai Transaksi untuk ID:", id);
+        console.log("1. Meminta Token Midtrans untuk:", id);
 
-        // --- LANGKAH 1: REKAM KE DATABASE DULU (WAJIB) ---
-        const saveResponse = await fetch(`${_BASE_URL}/bayar`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product_id: id,
-            user_token: myOrderId, 
-            quantity: 1 
-          })
-        });
-
-        if (!saveResponse.ok) {
-            throw new Error("Gagal menyimpan data ke mesin.");
-        }
-        console.log("2. Data tersimpan di DB. Meminta Token Midtrans...");
-
-        // --- LANGKAH 2: MINTA TOKEN PEMBAYARAN (FIX: URL BENAR) ---
-        // SEBELUMNYA: fetch(`${_BASE_URL}//get-token`... 
-        // SEKARANG: fetch(`${_BASE_URL}/api/get-token`...
+        // --- UBAHAN PENTING: LANGKAH 1 DIBUANG ---
+        // Kita langsung loncat minta token. Jangan kurangi stok dulu!
+        
+        // --- LANGKAH 2: MINTA TOKEN PEMBAYARAN ---
+        // Pastikan URL mengarah ke /api/get-token
         const tokenResponse = await fetch(`${_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -381,46 +369,54 @@
         if (data.error) { throw new Error(data.error); }
         if (!data.token) { throw new Error("Token tidak diterima"); }
 
-        console.log("3. Token diterima. Membuka Snap...");
+        console.log("2. Token diterima. Membuka Snap...");
 
         // --- LANGKAH 3: TAMPILKAN POPUP ---
-        btn.innerHTML = "💰 Menunggu Pembayaran...";
+        btn.innerHTML = "💰 Silakan Scan QRIS...";
         
         window.snap.pay(data.token, {
             onSuccess: async function(result){
-                console.log("4. Pembayaran Sukses!", result);
-                btn.innerHTML = "🔄 Memproses Barang...";
+                // --- DISINI BARU KITA KURANGI STOK ---
+                console.log("3. Pembayaran Sukses! Mengurangi Stok...", result);
+                btn.innerHTML = "🔄 Mengeluarkan Barang...";
 
-                // Kirim ulang konfirmasi
-                await fetch(`${_BASE_URL}/bayar`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        product_id: id,
-                        user_token: myOrderId,
-                        quantity: 1 
-                    })
-                });
+                try {
+                    // Panggil endpoint /bayar untuk Finalisasi & Kurangi Stok
+                    await fetch(`${_BASE_URL}/bayar`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            product_id: id,
+                            user_token: myOrderId,
+                            quantity: 1 
+                        })
+                    });
 
-                document.getElementById("pesan-layar").innerText = "✅ TRANSAKSI BERHASIL! TUNGGU KUE...";
-                document.getElementById("pesan-layar").style.color = "#2ecc71";
-                
-                // Beri waktu mesin merespons sebelum refresh stok
-                setTimeout(() => {
-                    fetchProducts(); 
-                    alert("Pembayaran Berhasil! Mesin akan mengeluarkan barang sejenak lagi.");
-                    resetButton();
-                }, 2000);
+                    document.getElementById("pesan-layar").innerText = "✅ TRANSAKSI BERHASIL! AMBIL BARANG...";
+                    document.getElementById("pesan-layar").style.color = "#2ecc71";
+                    
+                    setTimeout(() => {
+                        fetchProducts(); // Refresh angka stok di layar
+                        alert("Pembayaran Berhasil! Silakan ambil barang.");
+                        resetButton();
+                    }, 2000);
+
+                } catch (errSave) {
+                    console.error("Gagal update stok server:", errSave);
+                    alert("Pembayaran berhasil tapi gagal update stok server. Hubungi Admin.");
+                }
             },
             onPending: function(result){
-                alert("Menunggu pembayaran...");
+                alert("Menunggu pembayaran... Stok belum berkurang.");
                 resetButton();
             },
             onError: function(result){
-                alert("Pembayaran Gagal.");
+                alert("Pembayaran Gagal. Stok aman.");
                 resetButton();
             },
             onClose: function(){
+                // Kalau diclose, tidak ada apa-apa yang terjadi (Stok aman)
+                console.log("Popup ditutup tanpa bayar.");
                 resetButton(); 
             }
         });
