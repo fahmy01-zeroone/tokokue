@@ -217,14 +217,14 @@
 <div id="waModal" class="modal-overlay">
   <div class="modal-content" style="text-align: center; max-width: 400px;">
     <span class="close-modal" onclick="closeWaModal()">&times;</span>
-     
+      
     <h2 style="border:none; margin-bottom: 5px;">Hubungi Admin</h2>
     <p>Scan QR ini pakai kamera HP untuk chat:</p>
-     
+      
     <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://wa.me/6281998143531" 
          alt="Scan QR WA" 
          style="width: 200px; height: 200px; margin: 10px 0; border: 2px solid #ddd; padding: 5px; border-radius: 10px;">
-     
+      
     <p style="font-weight: bold; font-size: 18px; color: #25D366; margin-top: 0;">
       <i class="fa-brands fa-whatsapp"></i> 0819-9814-3531
     </p>
@@ -306,7 +306,7 @@
           <img src="${imgUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${productImages.default}'">
           <h3>${p.name}</h3>
           <div class="harga">Rp ${hargaFmt}</div>
-          
+           
           <button id="btn-${p.id}" class="btn-beli" ${isHabis ? "disabled" : ""}>
             ${isHabis ? "Habis" : "🛒 Beli Sekarang"}
           </button>
@@ -322,18 +322,14 @@
   }
 
   // ==========================================================
-  // --- FUNGSI BELI LANGSUNG (LOGIKA DIPERBAIKI) ---
+  // --- FUNGSI BELI LANGSUNG (TELAH DIPERBAIKI URL-NYA) ---
   // ==========================================================
   async function beliLangsung(id, nama, harga) {
     if (typeof window.snap === 'undefined') {
         alert("Sistem pembayaran sedang loading. Tunggu sebentar...");
         return;
     }
-
-    // ⚠️ PERINGATAN PENTING UNTUK HARDWARE ⚠️
-    // Pastikan kode Arduino/ESP32 Anda sudah mengenali ID "p11", "p12", dll.
-    // Jika Arduino hanya diprogram untuk "p1", "p2", maka "p11" tidak akan menggerakkan servo!
-    
+   
     const btnId = "btn-" + id; 
     const btn = document.getElementById(btnId);
     const originalText = btn.innerText;
@@ -352,13 +348,12 @@
         console.log("1. Memulai Transaksi untuk ID:", id);
 
         // --- LANGKAH 1: REKAM KE DATABASE DULU (WAJIB) ---
-        // Ini memastikan Arduino bisa melihat order ini sbg "PENDING" atau siap diproses
         const saveResponse = await fetch(`${_BASE_URL}/bayar`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             product_id: id,
-            user_token: myOrderId, // Token ini jadi kunci pencocokan
+            user_token: myOrderId, 
             quantity: 1 
           })
         });
@@ -368,8 +363,10 @@
         }
         console.log("2. Data tersimpan di DB. Meminta Token Midtrans...");
 
-        // --- LANGKAH 2: MINTA TOKEN PEMBAYARAN ---
-        const tokenResponse = await fetch(`${_BASE_URL}/get-token`, {
+        // --- LANGKAH 2: MINTA TOKEN PEMBAYARAN (FIX: URL BENAR) ---
+        // SEBELUMNYA: fetch(`${_BASE_URL}//get-token`... 
+        // SEKARANG: fetch(`${_BASE_URL}/api/get-token`...
+        const tokenResponse = await fetch(`${_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -394,9 +391,7 @@
                 console.log("4. Pembayaran Sukses!", result);
                 btn.innerHTML = "🔄 Memproses Barang...";
 
-                // Kirim ulang konfirmasi (Opsional, untuk memastikan status PAID di backend cepat berubah)
-                // T biasanya Webhook Midtrans sudah menangani ini.
-                // Kita hit endpoint ini lagi sekedar trigger 'refresh' kalau backend support.
+                // Kirim ulang konfirmasi
                 await fetch(`${_BASE_URL}/bayar`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
