@@ -321,8 +321,8 @@
     });
   }
 
- // ==========================================================
-  // --- FUNGSI BELI LANGSUNG (LOGIKA FIX: STOK AMAN) ---
+  // ==========================================================
+  // --- FUNGSI BELI LANGSUNG (LOGIKA FIX: 5 DETIK RESET) ---
   // ==========================================================
   async function beliLangsung(id, nama, harga) {
     if (typeof window.snap === 'undefined') {
@@ -348,12 +348,8 @@
 
     try {
         console.log("1. Meminta Token Midtrans untuk:", id);
-
-        // --- UBAHAN PENTING: LANGKAH 1 DIBUANG ---
-        // Kita langsung loncat minta token. Jangan kurangi stok dulu!
         
-        // --- LANGKAH 2: MINTA TOKEN PEMBAYARAN ---
-        // Pastikan URL mengarah ke /api/get-token
+        // --- LANGKAH 1 (LANGSUNG MINTA TOKEN) ---
         const tokenResponse = await fetch(`${_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -371,17 +367,24 @@
 
         console.log("2. Token diterima. Membuka Snap...");
 
-        // --- LANGKAH 3: TAMPILKAN POPUP ---
+        // --- LANGKAH 2: TAMPILKAN POPUP ---
         btn.innerHTML = "💰 Silakan Scan QRIS...";
         
         window.snap.pay(data.token, {
             onSuccess: async function(result){
-                // --- DISINI BARU KITA KURANGI STOK ---
                 console.log("3. Pembayaran Sukses! Mengurangi Stok...", result);
-                btn.innerHTML = "🔄 Mengeluarkan Barang...";
+                
+                // --- VISUAL UI: KASIH TAU USER SUKSES ---
+                btn.innerHTML = "✅ LUNAS";
+                btn.style.background = "#27ae60"; // Hijau
+                
+                const layar = document.getElementById("pesan-layar");
+                layar.innerText = "🎉 TERIMA KASIH! SILAKAN AMBIL BARANG...";
+                layar.style.color = "#2ecc71";
+                layar.style.transform = "scale(1.1)"; 
 
+                // --- UPDATE KE SERVER (KURANGI STOK) ---
                 try {
-                    // Panggil endpoint /bayar untuk Finalisasi & Kurangi Stok
                     await fetch(`${_BASE_URL}/bayar`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -391,20 +394,21 @@
                             quantity: 1 
                         })
                     });
-
-                    document.getElementById("pesan-layar").innerText = "✅ TRANSAKSI BERHASIL! AMBIL BARANG...";
-                    document.getElementById("pesan-layar").style.color = "#2ecc71";
-                    
-                    setTimeout(() => {
-                        fetchProducts(); // Refresh angka stok di layar
-                        alert("Pembayaran Berhasil! Silakan ambil barang.");
-                        resetButton();
-                    }, 2000);
-
                 } catch (errSave) {
                     console.error("Gagal update stok server:", errSave);
-                    alert("Pembayaran berhasil tapi gagal update stok server. Hubungi Admin.");
                 }
+
+                // --- HITUNG MUNDUR 5 DETIK & RESET ---
+                let detik = 5;
+                const interval = setInterval(() => {
+                    btn.innerHTML = `✅ LUNAS (Reset: ${detik})`;
+                    detik--;
+                }, 1000);
+
+                setTimeout(() => {
+                    clearInterval(interval); 
+                    window.location.reload(); // <--- REFRESH HALAMAN DISINI
+                }, 5000); 
             },
             onPending: function(result){
                 alert("Menunggu pembayaran... Stok belum berkurang.");
@@ -428,7 +432,7 @@
     }
   }
 
-  // --- AUTO REFRESH ---
+  // --- AUTO REFRESH (TIMEOUT LAMA) ---
   let idleTime = 0;
   const resetTimer = () => { idleTime = 0; };
   document.onmousemove = resetTimer;
