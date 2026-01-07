@@ -369,7 +369,7 @@
         console.log("2. Data tersimpan di DB. Meminta Token Midtrans...");
 
         // --- LANGKAH 2: MINTA TOKEN PEMBAYARAN ---
-        const tokenResponse = await fetch(`${_BASE_URL}//get-token`, {
+        const tokenResponse = await fetch(`${_BASE_URL}/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
