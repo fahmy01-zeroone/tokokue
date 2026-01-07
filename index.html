@@ -204,10 +204,10 @@
     </h2>
     <button class="btn-clear" onclick="hapusKeranjang()">🗑️ Hapus Semua</button>
   </div>
-  
+   
   <div id="cart-items"></div>
   <div class="total" id="total">Total: Rp 0</div>
-  
+   
   <button class="btn-checkout" id="btn-bayar" onclick="mulaiPembayaranMidtrans()">Bayar Sekarang</button>
   <p style="text-align: center; font-size: 13px; color: #888; margin-top: 15px;">
     *Jika batal bayar, mohon klik tanda silang (X) di pojok kanan atas popup.
@@ -310,7 +310,7 @@
     }
   }
 
-  // --- FUNGSI RENDER PRODUK (SUDAH DIPERBAIKI DENGAN HIDDEN LOGIC) ---
+  // --- FUNGSI RENDER PRODUK ---
   function renderProducts(products) {
     const container = document.getElementById("produk-list");
     container.innerHTML = "";
@@ -320,7 +320,7 @@
 
     // Kita filter dulu (buang yg hidden), baru di-Map (render ke HTML)
     const htmlString = products
-      .filter(p => !hiddenProducts.includes(p.id)) // <--- Logika filter disini
+      .filter(p => !hiddenProducts.includes(p.id)) 
       .map(p => {
         // Ambil URL gambar, atau pakai default jika ID tidak ada di map
         const imgUrl = productImages[p.id] || productImages["default"];
@@ -403,35 +403,51 @@
   function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)); }
 
   // ==========================================================
-  // --- FUNGSI PEMBAYARAN ---
+  // --- FUNGSI PEMBAYARAN (FIX: DIKIRIM SEKALIGUS) ---
   // ==========================================================
   async function mulaiPembayaranMidtrans() {
     if (!cart.length) return alert("Keranjang kosong!");
 
     const btn = document.getElementById("btn-bayar");
+    const originalText = btn.innerHTML; // Simpan teks asli
     btn.innerHTML = "⏳ Memproses...";
     btn.disabled = true;
 
     const myOrderId = "ORDER-" + Date.now(); 
 
     const resetButton = () => {
-        btn.innerHTML = "Bayar Sekarang";
+        btn.innerHTML = originalText;
         btn.disabled = false;
     };
 
-    try {
-        // 1. Simpan detail order ke DB (endpoint /bayar)
-        await simpanOrderKeDatabase(myOrderId);
+    // Siapkan data items untuk dikirim sekaligus
+    const itemsToSend = cart.map(item => ({
+        id: item.id,
+        quantity: item.qty
+    }));
 
-        // 2. Siapkan data item (hanya ID dan Qty)
-        const itemsToSend = cart.map(item => ({
-            id: item.id,
-            quantity: item.qty
-        }));
+    try {
+        // 1. Simpan detail order ke DB & Cek Stok (Sekali Tembak)
+        // Kita kirim { items: [...] } agar backend memproses batch
+        const respBayar = await fetch(`${API_BASE_URL}/bayar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_token: myOrderId,
+            items: itemsToSend // <--- ARRAY ITEMS DIKIRIM DISINI
+          })
+        });
+
+        const dataBayar = await respBayar.json();
+
+        // Jika stok habis atau error lain
+        if (!respBayar.ok || dataBayar.error) {
+            throw new Error(dataBayar.error || "Gagal memproses stok/order");
+        }
 
         btn.innerHTML = "⏳ Menghubungi Bank...";
         
-        // 3. Request Token
+        // 2. Request Token Midtrans
         const response = await fetch(`${API_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -445,15 +461,14 @@
         const data = await response.json();
         
         if (data.error) {
-            alert("Error: " + data.error);
-            resetButton(); return;
+            throw new Error(data.error);
         }
         
         if (!data.token) {
-            alert("Gagal koneksi Token.");
-            resetButton(); return;
+            throw new Error("Gagal koneksi Token.");
         }
 
+        // 3. Popup Midtrans
         window.snap.pay(data.token, {
             onSuccess: function(result){
                 console.log("Pembayaran Sukses!", result);
@@ -484,25 +499,9 @@
         });
     } catch (error) {
         console.error("Error:", error);
-        alert("Terjadi kesalahan sistem. Cek koneksi internet.");
+        alert("Terjadi kesalahan: " + error.message);
         resetButton();
     }
-  }
-
-  // Helper Simpan ke DB
-  async function simpanOrderKeDatabase(orderId) {
-    const promises = cart.map(item => {
-        return fetch(`${API_BASE_URL}/bayar`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            product_id: item.id,
-            user_token: orderId, 
-            quantity: item.qty
-          })
-        });
-    });
-    await Promise.all(promises);
   }
 </script>
 
