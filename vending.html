@@ -10,33 +10,61 @@
 
   <style>
     /* RESET UMUM */
-    body { font-family: 'Poppins', sans-serif; background: #2c3e50; padding: 20px; margin: 0; color: #fff; }
+    body { 
+      font-family: 'Poppins', sans-serif; 
+      background: #2c3e50; 
+      padding: 20px; 
+      margin: 0; 
+      color: #fff; 
+      overflow-x: hidden; /* Mencegah scroll samping karena video full */
+    }
     
     h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; color: #f1c40f; } 
     .subtitle { text-align: center; color: #ecf0f1; margin-bottom: 20px; font-size: 15px; }
     
-    /* --- TAMBAHAN STYLE VIDEO YOUTUBE --- */
+    /* --- STYLE VIDEO BIOSKOP (CINEMATIC) --- */
     .video-wrapper {
-      text-align: center; 
-      margin-bottom: 30px; /* Jarak ke produk */
-      margin-left: auto;
-      margin-right: auto;
-      max-width: 800px; /* Samakan max-width dengan container produk */
+      position: relative;
+      width: 100vw; /* Lebar Full Layar Perangkat */
+      height: 320px; /* Tinggi Tetap (Bisa diatur) */
+      
+      /* Trik menembus padding body 20px supaya mentok kiri-kanan */
+      left: 50%;
+      right: 50%;
+      margin-left: -50vw;
+      margin-right: -50vw;
+      
+      overflow: hidden; /* Potong kelebihan video */
+      background: #000;
+      margin-bottom: 30px;
+      
+      /* RAHASIA ANTI SENTUH: */
+      pointer-events: none; 
+      user-select: none;
     }
 
     .video-wrapper iframe {
-      max-width: 100%; /* INI PERMINTAANMU: Agar responsif di HP tidak melebar */
-      width: 560px;    /* Lebar ideal di Laptop/PC */
-      height: 315px;
-      border-radius: 14px; /* Biar estetik sesuai tema */
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100vw; 
+      height: 56.25vw; /* Rasio 16:9 agar proporsional */
+      
+      /* Trik agar video selalu full cover (zoom dikit biar gak ada garis hitam) */
+      transform: translate(-50%, -50%) scale(1.3); 
+      
+      /* Pastikan minimal memenuhi tinggi container */
+      min-height: 350px; 
+      min-width: 100%;
+      
+      border: none;
+      opacity: 0.8; /* Sedikit gelap biar teks terbaca (opsional) */
     }
-
-    /* Penyesuaian tinggi video khusus HP */
+    
+    /* Khusus HP: Tinggi video disesuaikan rasio portrait */
     @media (max-width: 600px) {
-      .video-wrapper iframe {
-        height: 200px; 
-      }
+       .video-wrapper { height: 250px; }
+       .video-wrapper iframe { height: 100%; width: 180vh; /* Zoom extreme di HP biar full */ }
     }
 
     /* --- PRODUK GRID (Responsive) --- */
@@ -166,7 +194,7 @@
 
 <div class="video-wrapper">
   <iframe 
-    src="https://www.youtube.com/embed/3zbBtQ3qw0k?autoplay=1&mute=1&loop=1&playlist=3zbBtQ3qw0k"
+    src="https://www.youtube.com/embed/3zbBtQ3qw0k?autoplay=1&mute=1&loop=1&playlist=3zbBtQ3qw0k&controls=0&showinfo=0&rel=0&iv_load_policy=3&disablekb=1"
     title="Video Vending Machine" 
     frameborder="0" 
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
