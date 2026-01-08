@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vending Machine - AAA</title>   
-   
+  <title>Vending Machine - AAA</title>    
+    
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -18,10 +18,10 @@
       color: #fff; 
       overflow-x: hidden; 
     }
-    
+     
     h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; color: #f1c40f; } 
     .subtitle { text-align: center; color: #ecf0f1; margin-bottom: 20px; font-size: 15px; }
-    
+     
     /* --- STYLE VIDEO BIOSKOP (CINEMATIC) --- */
     .video-wrapper {
       position: relative;
@@ -58,7 +58,7 @@
       border: none;
       opacity: 0.8; 
     }
-    
+     
     @media (max-width: 600px) {
        .video-wrapper { height: 250px; }
        .video-wrapper iframe { height: 100%; width: 180vh; }
@@ -81,7 +81,7 @@
       display: flex; flex-direction: column; justify-content: space-between;
       color: #333;
     }
-    
+     
     .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
 
     .produk img {
@@ -106,7 +106,7 @@
         display: flex; align-items: center; justify-content: center;
     }
     .harga { font-weight: 700; margin: 5px 0 10px; color: #d35400; font-size: 15px; }
-    
+     
     button.btn-beli {
       background: #e67e22; 
       color: white; border: none;
@@ -126,7 +126,7 @@
       border-top: 1px solid #444; color: #bdc3c7; font-size: 14px;
       background-color: #34495e; border-radius: 14px;
     }
-    
+     
     .contact-box {
       margin-bottom: 25px; padding-bottom: 20px;
       border-bottom: 1px solid #555;
@@ -148,7 +148,7 @@
 
     .btn-wa { background-color: #25D366; }
     .btn-wa:hover { background-color: #1da851; }
-    
+     
     .footer a.policy-link {
       color: #95a5a6; text-decoration: none; font-size: 13px; cursor: pointer;
     }
@@ -219,7 +219,7 @@
       <h2>Info Vending Machine</h2>
       <h3>1. Cara Pembelian</h3>
       <p>Sistem ini menggunakan <strong>Pembayaran Langsung (Direct Payment)</strong>. Pilih barang -> Scan QRIS -> Barang keluar otomatis.</p>
-       
+        
       <h3>2. Barang Tidak Keluar?</h3>
       <p>Jika pembayaran berhasil tapi barang <strong>tidak keluar/tersangkut</strong>:</p>
       <ul>
@@ -230,7 +230,7 @@
 
       <h3>3. Salah Pilih Barang</h3>
       <p>Barang yang sudah dibayar dan keluar dari mesin <strong>tidak dapat ditukar atau dikembalikan</strong> (No Refund).</p>
-       
+        
       <h3>4. Stok Live</h3>
       <p>Stok di layar adalah Real-time. Jika stok habis, tombol beli akan terkunci otomatis.</p>
     </div>
@@ -316,7 +316,7 @@
   function renderProducts(products) {
     const container = document.getElementById("produk-list");
     container.innerHTML = "";
-     
+      
     products.forEach(p => {
       const imgUrl = productImages[p.id] || productImages["default"];
       const isHabis = p.stock <= 0;
@@ -329,7 +329,7 @@
           <img src="${imgUrl}" alt="${p.name}" onerror="this.onerror=null;this.src='${productImages.default}'">
           <h3>${p.name}</h3>
           <div class="harga">Rp ${hargaFmt}</div>
-           
+            
           <button id="btn-${p.id}" class="btn-beli" ${isHabis ? "disabled" : ""}>
             ${isHabis ? "Habis" : "🛒 Beli Sekarang"}
           </button>
@@ -345,7 +345,7 @@
   }
 
   // ==========================================================
-  // --- FUNGSI BELI LANGSUNG (INTI PEMBAYARAN) ---
+  // --- FUNGSI BELI LANGSUNG (LOGIKA FIX "ID MISMATCH") ---
   // ==========================================================
   async function beliLangsung(id, nama, harga) {
     if (typeof window.snap === 'undefined') {
@@ -356,9 +356,9 @@
     const btnId = "btn-" + id; 
     const btn = document.getElementById(btnId);
     const originalText = btn.innerText;
-     
+      
     // Kunci tombol
-    btn.innerHTML = "⏳ Menghubungi Server...";
+    btn.innerHTML = "⏳ Menyiapkan Order...";
     btn.disabled = true;
 
     const resetButton = () => {
@@ -366,64 +366,74 @@
         btn.disabled = false;
     };
 
-    // Buat Order ID Unik
-    const myOrderId = "ORDER-" + Date.now() + "-" + Math.floor(Math.random() * 1000); 
+    // Generate ID Sementara untuk request awal
+    const tempOrderId = "ORDER-" + Date.now() + "-" + Math.floor(Math.random() * 1000); 
 
     try {
-        console.log("1. Meminta Token Midtrans untuk:", id);
+        console.log("1. Menyimpan Order ke Database Server...");
         
-        // --- 1. MINTA TOKEN KE SERVER WORKER ---
-        const tokenResponse = await fetch(`${_BASE_URL}/api/get-token`, {
+        // --- STEP 1: SIMPAN DULU KE DATABASE (/bayar) ---
+        // Ini wajib dilakukan PERTAMA, agar Status PENDING terbentuk di DB
+        const responseBayar = await fetch(`${_BASE_URL}/bayar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-                order_id: myOrderId,
-                items: [{ id: id, quantity: 1 }], 
-                product_name: "Vending: " + nama
+                user_token: tempOrderId,
+                product_id: id,
+                quantity: 1 
             }) 
         });
 
-        const data = await tokenResponse.json();
+        const dataBayar = await responseBayar.json();
         
-        if (data.error) { throw new Error(data.error); }
-        if (!data.token) { throw new Error("Token tidak diterima"); }
+        if (!responseBayar.ok) { 
+            throw new Error(dataBayar.error || "Gagal menyimpan order"); 
+        }
 
-        console.log("2. Token diterima. Membuka Snap...");
+        // --- STEP 2: AMBIL ID RESMI DARI RESPONS SERVER ---
+        const OFFICIAL_ORDER_ID = dataBayar.order_id;
+        console.log("2. Order Valid! ID Resmi:", OFFICIAL_ORDER_ID);
 
-        // --- 2. TAMPILKAN POPUP MIDTRANS ---
+        btn.innerHTML = "🔄 Meminta Token...";
+
+        // --- STEP 3: MINTA TOKEN KE MIDTRANS (/api/get-token) ---
+        // Kita kirim ID yang SAMA PERSIS dengan database.
+        const responseToken = await fetch(`${_BASE_URL}/api/get-token`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                order_id: OFFICIAL_ORDER_ID // <--- KUNCI FIXNYA DISINI
+            })
+        });
+
+        const dataToken = await responseToken.json();
+
+        if (dataToken.error) { throw new Error(dataToken.error); }
+        if (!dataToken.token) { throw new Error("Token tidak diterima"); }
+
+        console.log("3. Token diterima. Membuka Snap...");
+
+        // --- STEP 4: TAMPILKAN POPUP MIDTRANS ---
         btn.innerHTML = "💰 Silakan Scan QRIS...";
         
-        window.snap.pay(data.token, {
-            // === DISINI LOGIKA SUKSES ===
-            onSuccess: async function(result){
-                console.log("3. Pembayaran Sukses! Mengurangi Stok...", result);
+        window.snap.pay(dataToken.token, {
+            // === LOGIKA SUKSES ===
+            onSuccess: function(result){
+                console.log("4. Pembayaran Sukses!", result);
                 
-                // A. Visual UI: Kasih tau user
+                // Update Visual UI Saja
+                // Kita TIDAK PERLU fetch /bayar lagi disini, karena data sudah 
+                // masuk database di Step 1. Nanti Webhook yang akan update status jadi PAID.
+                
                 btn.innerHTML = "✅ LUNAS";
                 btn.style.background = "#27ae60"; 
                 
                 const layar = document.getElementById("pesan-layar");
-                layar.innerText = "🎉 TERIMA KASIH! SILAKAN AMBIL BARANG...";
+                layar.innerText = "🎉 TERIMA KASIH! TUNGGU SEBENTAR...";
                 layar.style.color = "#2ecc71";
                 layar.style.transform = "scale(1.1)"; 
 
-                // B. UPDATE SERVER (PENTING!)
-                // Ini menembak endpoint /bayar untuk kurangi stok
-                try {
-                    await fetch(`${_BASE_URL}/bayar`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            product_id: id,
-                            user_token: myOrderId,
-                            quantity: 1 
-                        })
-                    });
-                } catch (errSave) {
-                    console.error("Gagal update stok server:", errSave);
-                }
-
-                // C. Hitung Mundur & Refresh Halaman
+                // Hitung Mundur & Refresh
                 let detik = 5;
                 const interval = setInterval(() => {
                     btn.innerHTML = `✅ LUNAS (Reset: ${detik})`;
@@ -432,15 +442,15 @@
 
                 setTimeout(() => {
                     clearInterval(interval); 
-                    window.location.reload(); // Refresh agar stok terupdate di layar
+                    window.location.reload(); 
                 }, 5000); 
             },
             onPending: function(result){
-                alert("Menunggu pembayaran... Stok belum berkurang.");
+                alert("Menunggu pembayaran...");
                 resetButton();
             },
             onError: function(result){
-                alert("Pembayaran Gagal. Stok aman.");
+                alert("Pembayaran Gagal.");
                 resetButton();
             },
             onClose: function(){
@@ -464,10 +474,10 @@
   document.ontouchstart = resetTimer; 
   document.onclick = resetTimer;
 
-  // Cek setiap 10 menit (600000ms)
+  // Cek setiap 10 menit
   setInterval(() => {
     idleTime++;
-    if (idleTime >= 2) { // Jika sudah 2x interval (20 menit) tanpa aktivitas
+    if (idleTime >= 2) { 
        window.location.reload(); 
     }
   }, 600000); 
