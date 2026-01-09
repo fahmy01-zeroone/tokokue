@@ -18,10 +18,10 @@
       color: #fff; 
       overflow-x: hidden; 
     }
-     
+      
     h1 { text-align: center; margin-bottom: 5px; font-size: 26px; transition: color 0.3s; color: #f1c40f; } 
     .subtitle { text-align: center; color: #ecf0f1; margin-bottom: 20px; font-size: 15px; }
-     
+      
     /* --- STYLE VIDEO BIOSKOP (CINEMATIC) --- */
     .video-wrapper {
       position: relative;
@@ -58,7 +58,7 @@
       border: none;
       opacity: 0.8; 
     }
-     
+      
     @media (max-width: 600px) {
        .video-wrapper { height: 250px; }
        .video-wrapper iframe { height: 100%; width: 180vh; }
@@ -81,7 +81,7 @@
       display: flex; flex-direction: column; justify-content: space-between;
       color: #333;
     }
-     
+      
     .produk:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.15); }
 
     .produk img {
@@ -106,7 +106,7 @@
         display: flex; align-items: center; justify-content: center;
     }
     .harga { font-weight: 700; margin: 5px 0 10px; color: #d35400; font-size: 15px; }
-     
+      
     button.btn-beli {
       background: #e67e22; 
       color: white; border: none;
@@ -126,7 +126,7 @@
       border-top: 1px solid #444; color: #bdc3c7; font-size: 14px;
       background-color: #34495e; border-radius: 14px;
     }
-     
+      
     .contact-box {
       margin-bottom: 25px; padding-bottom: 20px;
       border-bottom: 1px solid #555;
@@ -148,7 +148,7 @@
 
     .btn-wa { background-color: #25D366; }
     .btn-wa:hover { background-color: #1da851; }
-     
+      
     .footer a.policy-link {
       color: #95a5a6; text-decoration: none; font-size: 13px; cursor: pointer;
     }
@@ -345,7 +345,7 @@
   }
 
   // ==========================================================
-  // --- FUNGSI BELI LANGSUNG (LOGIKA FIX "ID MISMATCH") ---
+  // --- FUNGSI BELI LANGSUNG ---
   // ==========================================================
   async function beliLangsung(id, nama, harga) {
     if (typeof window.snap === 'undefined') {
@@ -373,7 +373,7 @@
         console.log("1. Menyimpan Order ke Database Server...");
         
         // --- STEP 1: SIMPAN DULU KE DATABASE (/bayar) ---
-        // Ini wajib dilakukan PERTAMA, agar Status PENDING terbentuk di DB
+        // Server akan membuat order status PENDING dan Mengurangi STOK
         const responseBayar = await fetch(`${_BASE_URL}/bayar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -397,12 +397,11 @@
         btn.innerHTML = "🔄 Meminta Token...";
 
         // --- STEP 3: MINTA TOKEN KE MIDTRANS (/api/get-token) ---
-        // Kita kirim ID yang SAMA PERSIS dengan database.
         const responseToken = await fetch(`${_BASE_URL}/api/get-token`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                order_id: OFFICIAL_ORDER_ID // <--- KUNCI FIXNYA DISINI
+                order_id: OFFICIAL_ORDER_ID
             })
         });
 
@@ -417,13 +416,9 @@
         btn.innerHTML = "💰 Silakan Scan QRIS...";
         
         window.snap.pay(dataToken.token, {
-            // === LOGIKA SUKSES ===
+            // === PEMBAYARAN SUKSES ===
             onSuccess: function(result){
                 console.log("4. Pembayaran Sukses!", result);
-                
-                // Update Visual UI Saja
-                // Kita TIDAK PERLU fetch /bayar lagi disini, karena data sudah 
-                // masuk database di Step 1. Nanti Webhook yang akan update status jadi PAID.
                 
                 btn.innerHTML = "✅ LUNAS";
                 btn.style.background = "#27ae60"; 
@@ -445,16 +440,25 @@
                     window.location.reload(); 
                 }, 5000); 
             },
+            
+            // === PEMBAYARAN PENDING (DIAMKAN SAJA) ===
             onPending: function(result){
                 alert("Menunggu pembayaran...");
                 resetButton();
             },
+            
+            // === PEMBAYARAN ERROR (PERLU RESTORE STOK) ===
             onError: function(result){
+                console.log("Pembayaran Gagal. Membatalkan order...");
+                batalkanPesanan(OFFICIAL_ORDER_ID); // <--- FITUR FIX RESTORE STOK
                 alert("Pembayaran Gagal.");
                 resetButton();
             },
+            
+            // === PEMBAYARAN DITUTUP/CLOSE (PERLU RESTORE STOK) ===
             onClose: function(){
-                console.log("Popup ditutup tanpa bayar.");
+                console.log("Popup ditutup tanpa bayar. Membatalkan order...");
+                batalkanPesanan(OFFICIAL_ORDER_ID); // <--- FITUR FIX RESTORE STOK
                 resetButton(); 
             }
         });
@@ -463,6 +467,25 @@
         console.error("CRITICAL ERROR:", error);
         alert("Gagal koneksi: " + error.message);
         resetButton();
+    }
+  }
+
+  // --- FUNGSI TAMBAHAN: BATALKAN PESANAN (RESTORE STOK) ---
+  // Fungsi ini wajib ada agar jika user cancel, stok kembali.
+  // Note: Pastikan server Anda memiliki endpoint '/cancel' atau '/batal'
+  // yang berfungsi menghapus order pending & mengembalikan stok.
+  async function batalkanPesanan(orderId) {
+    try {
+        await fetch(`${_BASE_URL}/cancel`, { 
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order_id: orderId })
+        });
+        console.log("Info ke Server: Order " + orderId + " dibatalkan, stok dikembalikan.");
+    } catch (e) {
+        // Abaikan error di console agar user tidak bingung, 
+        // tapi log tetap ada untuk developer.
+        console.warn("Gagal mengirim sinyal batal ke server:", e);
     }
   }
 
